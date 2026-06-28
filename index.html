@@ -760,13 +760,13 @@ async function loadOverview() {
 
     // Categories grid
     const grid = allCategories.map(c => {
-      const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:13px;font-weight:500">${c.name}</span>
-        <span style="font-size:12px;color:var(--muted)">${count} products</span>
-      </div>`;
-    }).join('');
-    document.getElementById('categories-list').innerHTML = grid || '<div class="empty-state">No categories</div>';
+  const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);min-width:100%">
+    <span style="font-size:13px;font-weight:500">${c.name}</span>
+    <span style="font-size:12px;color:var(--muted)">${count} products</span>
+  </div>`;
+}).join('');
+document.getElementById('categories-list').innerHTML = `<div style="display:flex;flex-direction:column;width:100%">${grid}</div>` || '<div class="empty-state">No categories</div>';
 
   } catch(e) {
     document.getElementById('overview-sub').textContent = 'Error loading data.';
