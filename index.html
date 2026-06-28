@@ -508,12 +508,14 @@
 
 .variations-list { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+    -webkit-appearance: inner-spin-button;
+    opacity: 1;
+    background: var(--border);
+    border-left: 1px solid var(--bg);
+    cursor: pointer;
   }
-  input[type=number] { -moz-appearance: textfield; }
 </style>
 </head>
 <body>
