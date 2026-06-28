@@ -511,10 +511,16 @@
 input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: inner-spin-button;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  input[type=number]:hover::-webkit-inner-spin-button,
+  input[type=number]:hover::-webkit-outer-spin-button,
+  input[type=number]:focus::-webkit-inner-spin-button,
+  input[type=number]:focus::-webkit-outer-spin-button {
     opacity: 1;
     background: var(--border);
-    border-left: 1px solid var(--bg);
-    cursor: pointer;
   }
 </style>
 </head>
