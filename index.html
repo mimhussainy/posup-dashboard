@@ -508,19 +508,86 @@
 
 .variations-list { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-input[type=number]::-webkit-inner-spin-button,
-  input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: inner-spin-button;
-    opacity: 0;
-    cursor: pointer;
+.price-input::-webkit-inner-spin-button,
+.price-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 
-  input[type=number]:hover::-webkit-inner-spin-button,
-  input[type=number]:hover::-webkit-outer-spin-button,
-  input[type=number]:focus::-webkit-inner-spin-button,
-  input[type=number]:focus::-webkit-outer-spin-button {
-    opacity: 1;
-    background: var(--border);
+  .price-input {
+    -moz-appearance: textfield;
+  }
+
+  .price-stepper {
+    width: 88px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .price-stepper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(124, 92, 252, 0.14);
+  }
+
+  .price-stepper.changed {
+    border-color: var(--yellow);
+  }
+
+  .price-stepper .price-input {
+    width: 58px;
+    height: 30px;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    outline: none;
+  }
+
+  .price-stepper.changed .price-input {
+    color: var(--yellow);
+  }
+
+  .price-stepper-buttons {
+    width: 28px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    background: rgba(124, 92, 252, 0.08);
+  }
+
+  .price-stepper-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--accent2);
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .price-stepper-btn:first-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .price-stepper-btn:hover {
+    background: rgba(124, 92, 252, 0.22);
+    color: #fff;
   }
 </style>
 </head>
@@ -933,20 +1000,24 @@ function renderProducts(products) {
       </td>
       
       <td><span class="badge badge-${p.type}">${p.type}</span></td>
-      <td>
+            <td>
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-size:12px;color:var(--muted)">CHF</span>
-          <input
-            type="number"
-            step="0.5"
-            value="${p.price}"
-            data-product-id="${p.id}"
-            data-original-price="${p.price}"
-            class="price-input"
-            oninput="markPriceChanged(this)"
-            step="0.5"
-style="width:70px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--accent2);background:var(--bg);border:1px solid var(--border);border-radius:6px;outline:none;-moz-appearance:textfield;"
-          >
+          <div class="price-stepper">
+            <input
+              type="number"
+              step="0.5"
+              value="${p.price}"
+              data-product-id="${p.id}"
+              data-original-price="${p.price}"
+              class="price-input"
+              oninput="markPriceChanged(this)"
+            >
+            <div class="price-stepper-buttons">
+              <button type="button" class="price-stepper-btn" onclick="adjustPriceInput(this, 0.5)">▲</button>
+              <button type="button" class="price-stepper-btn" onclick="adjustPriceInput(this, -0.5)">▼</button>
+            </div>
+          </div>
         </div>
       </td>
       <td>
@@ -968,14 +1039,27 @@ style="width:70px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--acc
 function markPriceChanged(input) {
   const original = parseFloat(input.dataset.originalPrice);
   const current = parseFloat(input.value);
+  const wrapper = input.closest('.price-stepper');
+
   if (current !== original) {
-    input.style.borderColor = 'var(--yellow)';
-    input.style.color = 'var(--yellow)';
+    if (wrapper) wrapper.classList.add('changed');
   } else {
-    input.style.borderColor = 'var(--border)';
-    input.style.color = 'var(--accent2)';
+    if (wrapper) wrapper.classList.remove('changed');
   }
+
   updateSaveAllBtn();
+}
+
+function adjustPriceInput(button, change) {
+  const wrapper = button.closest('.price-stepper');
+  const input = wrapper ? wrapper.querySelector('.price-input') : null;
+  if (!input) return;
+
+  const current = parseFloat(input.value || input.dataset.originalPrice || '0');
+  const next = Math.max(0, current + change);
+
+  input.value = Number(next.toFixed(2));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function updateSaveAllBtn() {
@@ -1016,10 +1100,12 @@ async function saveAllPrices() {
         saved++;
         // Update original price so it resets color
         const input = document.querySelector(`.price-input[data-product-id="${item.id}"]`);
-        if (input) {
+                if (input) {
           input.dataset.originalPrice = item.price;
-          input.style.borderColor = 'var(--border)';
-          input.style.color = 'var(--accent2)';
+
+          const wrapper = input.closest('.price-stepper');
+          if (wrapper) wrapper.classList.remove('changed');
+
           // Update in allProducts
           const p = allProducts.find(p => p.id === item.id);
           if (p) p.price = item.price;
