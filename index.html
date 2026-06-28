@@ -510,7 +510,11 @@
     <div class="form-row">
       <div class="field-label">Password</div>
       <input type="password" id="login-password" placeholder="Enter dashboard password" onkeydown="if(event.key==='Enter') doLogin()">
-      <div class="error-msg" id="login-error"></div>
+<div class="error-msg" id="login-error"></div>
+<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted);cursor:pointer">
+  <input type="checkbox" id="remember-me" style="width:auto">
+  Remember me for 7 days
+</label>
     </div>
     <button class="btn btn-primary btn-full" onclick="doLogin()">Sign in</button>
   </div>
@@ -685,13 +689,36 @@ let editingProductId = null;
 function doLogin() {
   const pwd = document.getElementById('login-password').value;
   if (pwd === DASHBOARD_PASSWORD) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    loadRestaurants();
+    const remember = document.getElementById('remember-me').checked;
+    if (remember) {
+      const expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+      localStorage.setItem('posup_auth', JSON.stringify({ expires }));
+    } else {
+      sessionStorage.setItem('posup_auth', '1');
+    }
+    showApp();
   } else {
     document.getElementById('login-error').textContent = 'Incorrect password.';
   }
 }
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadRestaurants();
+}
+
+function checkAuth() {
+  const local = localStorage.getItem('posup_auth');
+  if (local) {
+    const { expires } = JSON.parse(local);
+    if (Date.now() < expires) { showApp(); return; }
+    localStorage.removeItem('posup_auth');
+  }
+  if (sessionStorage.getItem('posup_auth')) { showApp(); return; }
+}
+
+checkAuth();
 
 // ── NAVIGATION ──
 function showPage(name) {
