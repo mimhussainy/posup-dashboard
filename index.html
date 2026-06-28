@@ -851,7 +851,9 @@ const hasVariables = allProducts.some(p => p.category_ids.includes(c.id) && p.va
     const tags = [];
     if (hasVariables) tags.push('⚡ Variable');
     addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
-    return { id: c.id, name: c.name, count, variations: tags };
+return { id: c.id, name: c.name, count, variations: tags };
+  }));
+
   const html = items.map((item, i) => `
     <div
       onclick="setCategoryFilter('${item.id}', this)"
