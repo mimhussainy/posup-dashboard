@@ -841,7 +841,7 @@ function showPage(name) {
 async function loadRestaurants() {
   try {
     const sel = document.getElementById('restaurant-select');
-    sel.innerHTML = '<option value="eatime">Eatime</option><option value="grillhouse">Grillhouse</option><option value="heidis">Heidis</option>';
+    sel.innerHTML = '<option value="eatime">Eatime</option>';
     currentRestaurant = 'eatime';
     await loadOverview();
   } catch(e) {
@@ -1386,7 +1386,7 @@ async function loadRestaurantsList() {
   const container = document.getElementById('restaurants-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-  const known = ['eatime', 'grillhouse', 'heidis'];
+  const known = ['eatime'];
   const rows = await Promise.all(known.map(async code => {
     try {
       const res = await fetch(`${BACKEND}/posup/profile/${code}`);
