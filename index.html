@@ -869,10 +869,9 @@ function renderCategoryFilter() {
       + '<span style="font-size:11px;color:var(--muted);background:var(--border);padding:1px 7px;border-radius:20px">' + item.count + '</span>'
       + '</div>'
       + (item.tags.length > 0 ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + item.tags.join(' · ') + '</div>' : '');
-    div.addEventListener('click', function() { setCategoryFilter(item.id); });
+div.addEventListener('click', function() { setCategoryFilter(item.id); });
     sidebar.appendChild(div);
   });
-}
 }
 
 function setCategoryFilter(id) {
