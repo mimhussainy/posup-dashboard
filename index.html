@@ -839,43 +839,37 @@ async function loadProducts() {
 }
 
 function renderCategoryFilter() {
-  const items = [
-    { id: 'all', name: 'All Products', count: allProducts.length }
-  ].concat(allCategories.map(c => {
-    const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
-    // Find variations in this category
-const hasVariables = allProducts.some(p => p.category_ids.includes(c.id) && p.variations?.length > 0);
-    const addonNames = allAddons
-      .filter(a => a.assigned_category_ids.includes(c.id))
-      .map(a => a.name);
-    const tags = [];
-    if (hasVariables) tags.push('⚡ Variable');
-    addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
-return { id: c.id, name: c.name, count, variations: tags };
-  }));
+  const items = [{ id: 'all', name: 'All Products', count: allProducts.length, tags: [] }]
+    .concat(allCategories.map(c => {
+      const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
+      const hasVariables = allProducts.some(p => p.category_ids.includes(c.id) && p.variations && p.variations.length > 0);
+      const addonNames = allAddons.filter(a => a.assigned_category_ids.includes(c.id)).map(a => a.name);
+      const tags = [];
+      if (hasVariables) tags.push('⚡ Variable');
+      addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
+      return { id: c.id, name: c.name, count, tags };
+    }));
 
-  const html = items.map((item, i) => `
-    <div
-      onclick="setCategoryFilter('${item.id}', this)"
-      data-cat-id="${item.id}"
-      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;${i === 0 ? 'background:rgba(124,92,252,0.12);' : ''}"
-      onmouseover="this.style.background='rgba(124,92,252,0.08)'"
-      onmouseout="if(this.dataset.catId !== selectedCategoryId) this.style.background='${i === 0 && selectedCategoryId === 'all' ? 'rgba(124,92,252,0.12)' : 'transparent'}'"
-    >
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:13px;font-weight:600;color:var(--text)">${item.name}</span>
-        <span style="font-size:11px;color:var(--muted);background:var(--border);padding:1px 7px;border-radius:20px">${item.count}</span>
-      </div>
-      ${item.variations?.length > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${item.variations.join(' · ')}</div>` : ''}
-    </div>
-  `).join('');
+  const sidebar = document.getElementById('product-cat-sidebar');
+  sidebar.innerHTML = '';
 
-  document.getElementById('product-cat-sidebar').innerHTML = html;
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.dataset.catId = item.id;
+    div.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;background:' + (item.id === selectedCategoryId ? 'rgba(124,92,252,0.12)' : 'transparent');
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:13px;font-weight:600;color:var(--text)">' + item.name + '</span>'
+      + '<span style="font-size:11px;color:var(--muted);background:var(--border);padding:1px 7px;border-radius:20px">' + item.count + '</span>'
+      + '</div>'
+      + (item.tags.length > 0 ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + item.tags.join(' · ') + '</div>' : '');
+    div.addEventListener('click', function() { setCategoryFilter(item.id); });
+    sidebar.appendChild(div);
+  });
+}
 }
 
-function setCategoryFilter(id, el) {
+function setCategoryFilter(id) {
   selectedCategoryId = id;
-  // Update sidebar styles
   document.querySelectorAll('#product-cat-sidebar > div').forEach(d => {
     d.style.background = d.dataset.catId === id ? 'rgba(124,92,252,0.12)' : 'transparent';
   });
