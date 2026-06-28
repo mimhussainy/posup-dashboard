@@ -804,8 +804,14 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   loadRestaurants();
+  const savedPage = sessionStorage.getItem('posup_page');
+  if (savedPage) {
+    setTimeout(() => {
+      const tab = Array.from(document.querySelectorAll('.nav-tab')).find(t => t.getAttribute('onclick').includes(savedPage));
+      if (tab) tab.click();
+    }, 100);
+  }
 }
-
 function checkAuth() {
   const local = localStorage.getItem('posup_auth');
   if (local) {
@@ -824,7 +830,7 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   event.target.classList.add('active');
-
+  sessionStorage.setItem('posup_page', name);
   if (name === 'products') {
   if (allProducts.length === 0) loadProducts();
   else { renderCategoryFilter(); filterProducts(); }
