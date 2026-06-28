@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POSUP Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --border: #2a2a36;
+    --accent: #7c5cfc;
+    --accent2: #a78bfa;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --card: #16161e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .login-logo {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent2);
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="password"], input[type="number"], input[type="email"], select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  .error-msg {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 8px;
+  }
+
+  /* ── APP LAYOUT ── */
+  #app { display: none; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 24px; }
+  .topbar-logo { font-size: 18px; font-weight: 800; color: var(--accent2); letter-spacing: -0.5px; }
+
+  .nav-tabs { display: flex; gap: 4px; }
+
+  .nav-tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .nav-tab:hover { color: var(--text); background: var(--border); }
+  .nav-tab.active { color: var(--text); background: var(--border); font-weight: 600; }
+
+  .restaurant-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .restaurant-selector select {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .page-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(124, 92, 252, 0.04); }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-active { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+  .badge-inactive { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+  .badge-simple { background: rgba(124, 92, 252, 0.15); color: var(--accent2); }
+  .badge-variable { background: rgba(245, 158, 11, 0.15); color: var(--yellow); }
+
+  /* ── TOGGLE ── */
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::after { transform: translateX(16px); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .modal-title { font-size: 17px; font-weight: 700; }
+
+  .modal-close {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .form-row { margin-bottom: 16px; }
+
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* ── SEARCH ── */
+  .search-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    width: 260px;
+  }
+
+  .search-bar:focus { border-color: var(--accent); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── IMPORT PAGE ── */
+  .import-form { max-width: 480px; }
+
+  .import-result {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--green);
+    display: none;
+  }
+
+  .import-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--red);
+    display: none;
+  }
+
+  /* ── LOADING ── */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--muted);
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ── PRODUCT IMAGE ── */
+  .product-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--border);
+  }
+
+  .product-img-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .cat-filter {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .cat-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .cat-pill:hover { border-color: var(--accent); color: var(--text); }
+  .cat-pill.active { border-color: var(--accent); background: rgba(124,92,252,0.15); color: var(--accent2); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  .price-cell { font-weight: 600; color: var(--accent2); }
+
+  .variations-list { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">POSUP</div>
+    <div class="login-sub">Restaurant POS Dashboard</div>
+    <div class="form-row">
+      <div class="field-label">Password</div>
+      <input type="password" id="login-password" placeholder="Enter dashboard password" onkeydown="if(event.key==='Enter') doLogin()">
+      <div class="error-msg" id="login-error"></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">POSUP</div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showPage('overview')">Overview</button>
+        <button class="nav-tab" onclick="showPage('products')">Products</button>
+        <button class="nav-tab" onclick="showPage('addons')">Addons</button>
+        <button class="nav-tab" onclick="showPage('import')">Import</button>
+      </div>
+    </div>
+    <div class="restaurant-selector">
+      <span>Restaurant:</span>
+      <select id="restaurant-select" onchange="onRestaurantChange()">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div class="page-title">Overview</div>
+    <div class="page-sub" id="overview-sub">Loading restaurant data...</div>
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="stat-value" id="stat-categories">—</div><div class="stat-label">Categories</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Products</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-active">—</div><div class="stat-label">Active</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-addons">—</div><div class="stat-label">Addon Groups</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Categories</div>
+      <div id="categories-list" class="loading"><div class="spinner"></div> Loading...</div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS PAGE -->
+  <div class="page" id="page-products">
+    <div class="page-title">Products</div>
+    <div class="page-sub">Manage menu items for the selected restaurant</div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input class="search-bar" type="text" placeholder="Search products..." id="product-search" oninput="filterProducts()">
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" onclick="loadProducts()">↻ Refresh</button>
+        <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
+      </div>
+    </div>
+    <div class="cat-filter" id="product-cat-filter"></div>
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Price</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADDONS PAGE -->
+  <div class="page" id="page-addons">
+    <div class="page-title">Addon Groups</div>
+    <div class="page-sub">Manage addon options assigned to categories and products</div>
+    <div class="toolbar">
+      <div class="toolbar-left"></div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" onclick="loadAddons()">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="addons-list"></div>
+  </div>
+
+  <!-- IMPORT PAGE -->
+  <div class="page" id="page-import">
+    <div class="page-title">Import from WordPress</div>
+    <div class="page-sub">Import or re-import products from a WooCommerce + Orderable site</div>
+    <div class="card import-form">
+      <div class="form-row">
+        <div class="field-label">Restaurant Code</div>
+        <input type="text" id="import-code" placeholder="e.g. eatime">
+      </div>
+      <div class="form-row">
+        <div class="field-label">WordPress Site URL</div>
+        <input type="text" id="import-url" placeholder="https://yoursite.ch">
+      </div>
+      <div class="form-row">
+        <div class="field-label">POSUP Secret Key</div>
+        <input type="password" id="import-key" placeholder="posup_eatime_2026">
+      </div>
+      <button class="btn btn-primary" id="import-btn" onclick="triggerImport()">Import Products</button>
+      <div class="import-result" id="import-result"></div>
+      <div class="import-error" id="import-error"></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Registered Restaurants</div>
+      <div id="restaurants-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT EDIT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="product-modal-title">Edit Product</div>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="field-label">Name</div>
+      <input type="text" id="edit-name">
+    </div>
+    <div class="form-row">
+      <div class="field-label">Description</div>
+      <textarea id="edit-description" rows="2" style="resize:vertical"></textarea>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <div class="field-label">Price (CHF)</div>
+        <input type="number" id="edit-price" step="0.05">
+      </div>
+      <div>
+        <div class="field-label">Active</div>
+        <select id="edit-active">
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-label">Image URL</div>
+      <input type="text" id="edit-image-url">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const BACKEND = 'https://foodup-order-alerts-backend.onrender.com';
+const DASHBOARD_PASSWORD = 'posup2026'; // change this
+
+// ── STATE ──
+let currentRestaurant = null;
+let allProducts = [];
+let allCategories = [];
+let allAddons = [];
+let selectedCategoryId = 'all';
+let editingProductId = null;
+
+// ── LOGIN ──
+function doLogin() {
+  const pwd = document.getElementById('login-password').value;
+  if (pwd === DASHBOARD_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadRestaurants();
+  } else {
+    document.getElementById('login-error').textContent = 'Incorrect password.';
+  }
+}
+
+// ── NAVIGATION ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'products' && allProducts.length === 0) loadProducts();
+  if (name === 'addons' && allAddons.length === 0) loadAddons();
+  if (name === 'import') loadRestaurantsList();
+  if (name === 'overview') loadOverview();
+}
+
+// ── RESTAURANT ──
+async function loadRestaurants() {
+  try {
+    const res = await fetch(`${BACKEND}/posup/products/eatime`);
+    const data = await res.json();
+    // For now seed with known restaurants — will expand later
+    const sel = document.getElementById('restaurant-select');
+    sel.innerHTML = '<option value="eatime">Eatime</option><option value="grillhouse">Grillhouse</option><option value="heidis">Heidis</option>';
+    currentRestaurant = 'eatime';
+    loadOverview();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function onRestaurantChange() {
+  currentRestaurant = document.getElementById('restaurant-select').value;
+  allProducts = [];
+  allCategories = [];
+  allAddons = [];
+  loadOverview();
+  // Reset other pages
+  document.getElementById('products-table').innerHTML = '';
+  document.getElementById('addons-list').innerHTML = '';
+}
+
+// ── OVERVIEW ──
+async function loadOverview() {
+  if (!currentRestaurant) return;
+  document.getElementById('overview-sub').textContent = 'Loading...';
+  document.getElementById('categories-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
+    const data = await res.json();
+
+    if (!data.restaurant) {
+      document.getElementById('overview-sub').textContent = 'No data imported yet. Go to Import tab.';
+      return;
+    }
+
+    allCategories = data.categories || [];
+    allProducts = data.products || [];
+    allAddons = data.addons || [];
+
+    const active = allProducts.filter(p => p.active).length;
+    document.getElementById('stat-categories').textContent = allCategories.length;
+    document.getElementById('stat-products').textContent = allProducts.length;
+    document.getElementById('stat-active').textContent = active;
+    document.getElementById('stat-addons').textContent = allAddons.length;
+    document.getElementById('overview-sub').textContent = data.restaurant.name + ' — Last imported data';
+
+    // Categories grid
+    const grid = allCategories.map(c => {
+      const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;font-weight:500">${c.name}</span>
+        <span style="font-size:12px;color:var(--muted)">${count} products</span>
+      </div>`;
+    }).join('');
+    document.getElementById('categories-list').innerHTML = grid || '<div class="empty-state">No categories</div>';
+
+  } catch(e) {
+    document.getElementById('overview-sub').textContent = 'Error loading data.';
+    console.error(e);
+  }
+}
+
+// ── PRODUCTS ──
+async function loadProducts() {
+  if (!currentRestaurant) return;
+  document.getElementById('products-table').innerHTML = '<tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
+    const data = await res.json();
+    allCategories = data.categories || [];
+    allProducts = data.products || [];
+    allAddons = data.addons || [];
+    renderCategoryFilter();
+    filterProducts();
+  } catch(e) {
+    document.getElementById('products-table').innerHTML = '<tr><td colspan="6"><div class="empty-state">Error loading products</div></td></tr>';
+  }
+}
+
+function renderCategoryFilter() {
+  const pills = `<button class="cat-pill active" onclick="setCategoryFilter('all', this)">All (${allProducts.length})</button>` +
+    allCategories.map(c => {
+      const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
+      return `<button class="cat-pill" onclick="setCategoryFilter('${c.id}', this)">${c.name} (${count})</button>`;
+    }).join('');
+  document.getElementById('product-cat-filter').innerHTML = pills;
+}
+
+function setCategoryFilter(id, el) {
+  selectedCategoryId = id;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  filterProducts();
+}
+
+function filterProducts() {
+  const search = document.getElementById('product-search').value.toLowerCase();
+  let filtered = allProducts;
+
+  if (selectedCategoryId !== 'all') {
+    filtered = filtered.filter(p => p.category_ids.includes(selectedCategoryId));
+  }
+
+  if (search) {
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search));
+  }
+
+  renderProducts(filtered);
+}
+
+function renderProducts(products) {
+  if (products.length === 0) {
+    document.getElementById('products-table').innerHTML = '<tr><td colspan="6"><div class="empty-state">No products found</div></td></tr>';
+    return;
+  }
+
+  const rows = products.map(p => {
+    const cats = allCategories.filter(c => p.category_ids.includes(c.id)).map(c => c.name).join(', ');
+    const img = p.image_url
+      ? `<img class="product-img" src="${p.image_url}" onerror="this.style.display='none'">`
+      : `<div class="product-img-placeholder">🍽</div>`;
+    const variations = p.variations?.length > 0
+      ? `<div class="variations-list">${p.variations.map(v => v.name + ' — CHF ' + v.price).join(' | ')}</div>`
+      : '';
+
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${img}
+          <div>
+            <div style="font-weight:600;font-size:13px">${p.name}</div>
+            ${p.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${p.description.substring(0,60)}${p.description.length>60?'...':''}</div>` : ''}
+            ${variations}
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--muted)">${cats}</td>
+      <td><span class="badge badge-${p.type}">${p.type}</span></td>
+      <td class="price-cell">CHF ${p.price}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${p.active ? 'checked' : ''} onchange="toggleProduct('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px" onclick="openEditProduct('${p.id}')">Edit</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('products-table').innerHTML = rows;
+}
+
+async function toggleProduct(productId, active) {
+  try {
+    const res = await fetch(`${BACKEND}/posup/product/${productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const p = allProducts.find(p => p.id === productId);
+      if (p) p.active = active;
+      showToast(active ? 'Product activated' : 'Product deactivated', 'success');
+      // Update stat
+      document.getElementById('stat-active').textContent = allProducts.filter(p => p.active).length;
+    }
+  } catch(e) {
+    showToast('Failed to update product', 'error');
+  }
+}
+
+function openEditProduct(productId) {
+  const p = allProducts.find(p => p.id === productId);
+  if (!p) return;
+  editingProductId = productId;
+  document.getElementById('product-modal-title').textContent = 'Edit Product';
+  document.getElementById('edit-name').value = p.name;
+  document.getElementById('edit-description').value = p.description || '';
+  document.getElementById('edit-price').value = p.price;
+  document.getElementById('edit-active').value = String(p.active);
+  document.getElementById('edit-image-url').value = p.image_url || '';
+  openModal('product-modal');
+}
+
+function openAddProduct() {
+  editingProductId = null;
+  document.getElementById('product-modal-title').textContent = 'Add Product';
+  document.getElementById('edit-name').value = '';
+  document.getElementById('edit-description').value = '';
+  document.getElementById('edit-price').value = '';
+  document.getElementById('edit-active').value = 'true';
+  document.getElementById('edit-image-url').value = '';
+  openModal('product-modal');
+}
+
+async function saveProduct() {
+  const name = document.getElementById('edit-name').value.trim();
+  const description = document.getElementById('edit-description').value.trim();
+  const price = parseFloat(document.getElementById('edit-price').value);
+  const active = document.getElementById('edit-active').value === 'true';
+  const image_url = document.getElementById('edit-image-url').value.trim();
+
+  if (!name) { showToast('Name is required', 'error'); return; }
+
+  try {
+    let url, method;
+    if (editingProductId) {
+      url = `${BACKEND}/posup/product/${editingProductId}`;
+      method = 'PATCH';
+    } else {
+      url = `${BACKEND}/posup/product`;
+      method = 'POST';
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, price, active, image_url, restaurant_code: currentRestaurant })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal('product-modal');
+      showToast('Product saved', 'success');
+      await loadProducts();
+    } else {
+      showToast(data.error || 'Failed to save', 'error');
+    }
+  } catch(e) {
+    showToast('Error saving product', 'error');
+  }
+}
+
+// ── ADDONS ──
+async function loadAddons() {
+  if (!currentRestaurant) return;
+  document.getElementById('addons-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
+    const data = await res.json();
+    allCategories = data.categories || [];
+    allAddons = data.addons || [];
+    renderAddons();
+  } catch(e) {
+    document.getElementById('addons-list').innerHTML = '<div class="empty-state">Error loading addons</div>';
+  }
+}
+
+function renderAddons() {
+  if (allAddons.length === 0) {
+    document.getElementById('addons-list').innerHTML = '<div class="empty-state">No addons imported yet</div>';
+    return;
+  }
+
+  const html = allAddons.map(group => {
+    const catNames = (group.assigned_category_ids || []).map(id => {
+      const cat = allCategories.find(c => c.id === id);
+      return cat ? cat.name : id;
+    }).join(', ');
+
+    const options = (group.options || []).map(opt =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${opt.name}</span>
+        <span style="color:${opt.price > 0 ? 'var(--accent2)' : 'var(--muted)'}">
+          ${opt.price > 0 ? '+ CHF ' + opt.price : 'free'}
+          ${opt.required ? '<span class="badge badge-active" style="margin-left:6px">required</span>' : ''}
+        </span>
+      </div>`
+    ).join('');
+
+    return `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div class="card-title" style="margin-bottom:4px">${group.name}</div>
+          ${catNames ? `<div style="font-size:12px;color:var(--muted)">Assigned to: ${catNames}</div>` : '<div style="font-size:12px;color:var(--muted)">No category assigned</div>'}
+        </div>
+        <span class="badge badge-simple">${group.options?.length || 0} options</span>
+      </div>
+      ${options}
+    </div>`;
+  }).join('');
+
+  document.getElementById('addons-list').innerHTML = html;
+}
+
+// ── IMPORT ──
+async function triggerImport() {
+  const code = document.getElementById('import-code').value.trim();
+  const url = document.getElementById('import-url').value.trim();
+  const key = document.getElementById('import-key').value.trim();
+
+  if (!code || !url || !key) {
+    showToast('All fields are required', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  document.getElementById('import-result').style.display = 'none';
+  document.getElementById('import-error').style.display = 'none';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/import/${code}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wp_site_url: url, secret_key: key })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('import-result').style.display = 'block';
+      document.getElementById('import-result').textContent =
+        `✓ Import successful! ${data.imported.categories} categories, ${data.imported.products} products, ${data.imported.addons} addon groups imported for "${code}".`;
+      loadRestaurantsList();
+    } else {
+      document.getElementById('import-error').style.display = 'block';
+      document.getElementById('import-error').textContent = data.error || 'Import failed';
+    }
+  } catch(e) {
+    document.getElementById('import-error').style.display = 'block';
+    document.getElementById('import-error').textContent = 'Network error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Import Products';
+  }
+}
+
+async function loadRestaurantsList() {
+  const container = document.getElementById('restaurants-list');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+
+  const known = ['eatime', 'grillhouse', 'heidis'];
+  const rows = await Promise.all(known.map(async code => {
+    try {
+      const res = await fetch(`${BACKEND}/posup/profile/${code}`);
+      const data = await res.json();
+      if (data.name) {
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:600;font-size:13px">${data.name}</div>
+            <div style="font-size:12px;color:var(--muted)">${code}</div>
+          </div>
+          <span class="badge badge-active">Imported</span>
+        </div>`;
+      }
+    } catch(e) {}
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;color:var(--muted)">${code}</div>
+      <span class="badge badge-inactive">Not imported</span>
+    </div>`;
+  }));
+
+  container.innerHTML = rows.join('');
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ── TOAST ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+</script>
+</body>
+</html>
