@@ -840,9 +840,15 @@ function showPage(name) {
 // ── RESTAURANT ──
 async function loadRestaurants() {
   try {
+    const res = await fetch(`${BACKEND}/posup/restaurants`);
+    const data = await res.json();
     const sel = document.getElementById('restaurant-select');
-    sel.innerHTML = '<option value="eatime">Eatime</option>';
-    currentRestaurant = 'eatime';
+    if (data.success && data.restaurants.length > 0) {
+      sel.innerHTML = data.restaurants.map(r => `<option value="${r.code}">${r.name}</option>`).join('');
+      currentRestaurant = data.restaurants[0].code;
+    } else {
+      sel.innerHTML = '<option value="">No restaurants</option>';
+    }
     await loadOverview();
   } catch(e) {
     console.error(e);
@@ -1386,28 +1392,32 @@ async function loadRestaurantsList() {
   const container = document.getElementById('restaurants-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-  const known = ['eatime'];
-  const rows = await Promise.all(known.map(async code => {
-    try {
-      const res = await fetch(`${BACKEND}/posup/profile/${code}`);
-      const data = await res.json();
-      if (data.name) {
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-weight:600;font-size:13px">${data.name}</div>
-            <div style="font-size:12px;color:var(--muted)">${code}</div>
-          </div>
-          <span class="badge badge-active">Imported</span>
-        </div>`;
-      }
-    } catch(e) {}
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:13px;color:var(--muted)">${code}</div>
-      <span class="badge badge-inactive">Not imported</span>
-    </div>`;
-  }));
+  try {
+    const res = await fetch(`${BACKEND}/posup/restaurants`);
+    const data = await res.json();
+    if (!data.success || data.restaurants.length === 0) {
+      container.innerHTML = '<div class="empty-state">No restaurants imported yet</div>';
+      return;
+    }
+    container.innerHTML = data.restaurants.map(r => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600;font-size:13px">${r.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${r.code}</div>
+        </div>
+        <span class="badge badge-active">Imported</span>
+      </div>
+    `).join('');
 
-  container.innerHTML = rows.join('');
+    // Also update restaurant selector
+    const sel = document.getElementById('restaurant-select');
+    sel.innerHTML = data.restaurants.map(r => `<option value="${r.code}">${r.name}</option>`).join('');
+    if (!currentRestaurant && data.restaurants.length > 0) {
+      currentRestaurant = data.restaurants[0].code;
+    }
+  } catch(e) {
+    container.innerHTML = '<div class="empty-state">Error loading restaurants</div>';
+  }
 }
 
 // ── MODALS ──
