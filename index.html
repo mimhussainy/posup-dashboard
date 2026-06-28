@@ -652,18 +652,22 @@
     <div class="page-title">Products</div>
     <div class="page-sub">Manage menu items for the selected restaurant</div>
     <div class="toolbar">
-      <div class="toolbar-left">
-        <input class="search-bar" type="text" placeholder="Search products..." id="product-search" oninput="filterProducts()">
-      </div>
+      <div class="toolbar-left"></div>
       <div class="toolbar-right">
         <button class="btn btn-secondary" onclick="loadProducts()">↻ Refresh</button>
         <button class="btn btn-success" id="save-all-prices-btn" onclick="saveAllPrices()" style="display:none">💾 Save All Prices</button>
         <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
       </div>
     </div>
-    <div style="display:flex;gap:16px;align-items:flex-start">
+    <div style="display:flex;gap:16px;margin-bottom:16px">
+      <input class="search-bar" type="text" placeholder="Search products..." id="product-search" oninput="filterProducts()" style="width:250px;flex-shrink:0;">
+      <div style="flex:1"></div>
+    </div>
+<div style="display:flex;gap:16px;align-items:flex-start">
       <!-- Category Sidebar -->
-      <div id="product-cat-sidebar" style="width:250px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:72px"></div>
+      <div style="width:250px;flex-shrink:0;">
+        <div id="product-cat-sidebar" style="width:250px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:72px"></div>
+      </div>
       <!-- Products Table -->
       <div style="flex:1;min-width:0">
         <div class="card" style="padding:0">
