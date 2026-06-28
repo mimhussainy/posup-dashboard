@@ -938,9 +938,8 @@ function renderProducts(products) {
             class="price-input"
             oninput="markPriceChanged(this)"
             step="0.5"
-            style="width:70px;padding:5px 8px;font-size:13px;font-weight:600;color:${p.price_overridden ? 'var(--yellow)' : 'var(--accent2)'};background:var(--bg);border:1px solid ${p.price_overridden ? 'var(--yellow)' : 'var(--border)'};border-radius:6px;outline:none;-moz-appearance:textfield;"
+style="width:70px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--accent2);background:var(--bg);border:1px solid var(--border);border-radius:6px;outline:none;-moz-appearance:textfield;"
           >
-          ${p.price_overridden ? '<span title="Manually overridden — will not update on import" style="font-size:13px;cursor:help;margin-left:2px">🔒</span>' : ''}
         </div>
       </td>
       <td>
