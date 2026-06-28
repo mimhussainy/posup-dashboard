@@ -856,10 +856,10 @@ function renderProducts(products) {
       <td><span class="badge badge-${p.type}">${p.type}</span></td>
       <td class="price-cell">CHF ${p.price}</td>
       <td>
-        <label class="toggle">
-          <input type="checkbox" ${p.active ? 'checked' : ''} onchange="toggleProduct('${p.id}', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
+        <label class="toggle" onclick="event.stopPropagation()">
+  <input type="checkbox" ${p.active === true ? 'checked' : ''} onchange="toggleProduct('${p.id}', this.checked)">
+  <span class="toggle-slider"></span>
+</label>
       </td>
       <td>
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px" onclick="openEditProduct('${p.id}')">Edit</button>
