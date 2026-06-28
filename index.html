@@ -1227,35 +1227,77 @@ function renderAddons() {
     return;
   }
 
-  const html = allAddons.map(group => {
+  const container = document.getElementById('addons-list');
+  container.innerHTML = '';
+
+  allAddons.forEach((group, index) => {
     const catNames = (group.assigned_category_ids || []).map(id => {
       const cat = allCategories.find(c => c.id === id);
-      return cat ? cat.name : id;
-    }).join(', ');
+      return cat ? `<span style="display:inline-flex;align-items:center;padding:2px 8px;background:rgba(124,92,252,0.12);border-radius:20px;font-size:11px;color:var(--accent2);font-weight:600;">${cat.name}</span>` : '';
+    }).filter(Boolean).join(' ');
 
-    const options = (group.options || []).map(opt =>
-      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span>${opt.name}</span>
-        <span style="color:${opt.price > 0 ? 'var(--accent2)' : 'var(--muted)'}">
-          ${opt.price > 0 ? '+ CHF ' + opt.price : 'free'}
-          ${opt.required ? '<span class="badge badge-active" style="margin-left:6px">required</span>' : ''}
-        </span>
-      </div>`
-    ).join('');
-
-    return `<div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div>
-          <div class="card-title" style="margin-bottom:4px">${group.name}</div>
-          ${catNames ? `<div style="font-size:12px;color:var(--muted)">Assigned to: ${catNames}</div>` : '<div style="font-size:12px;color:var(--muted)">No category assigned</div>'}
+    const optionsHtml = (group.options || []).map((opt, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;${i < group.options.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+          <span style="font-size:13px;font-weight:500;color:var(--text)">${opt.name}</span>
+          ${opt.required ? '<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(34,197,94,0.12);padding:1px 6px;border-radius:10px;">required</span>' : ''}
         </div>
-        <span class="badge badge-simple">${group.options?.length || 0} options</span>
+        <span style="font-size:13px;font-weight:700;color:${opt.price > 0 ? 'var(--accent2)' : 'var(--muted)'}">
+          ${opt.price > 0 ? '+ CHF ' + opt.price : 'free'}
+        </span>
       </div>
-      ${options}
-    </div>`;
-  }).join('');
+    `).join('');
 
-  document.getElementById('addons-list').innerHTML = html;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;';
+
+    const isOpen = index === 0;
+
+    card.innerHTML = `
+      <div onclick="toggleAddonGroup(this)" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:${catNames ? '6px' : '0'}">${group.name}</div>
+            ${catNames ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${catNames}</div>` : '<div style="font-size:11px;color:var(--muted)">No category assigned</div>'}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:20px;">${group.options?.length || 0} options</span>
+            <span class="addon-chevron" style="color:var(--muted);font-size:12px;transition:transform 0.2s;display:inline-block;transform:${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}">▼</span>
+          </div>
+        </div>
+      </div>
+      <div class="addon-body" style="display:${isOpen ? 'block' : 'none'};border-top:${isOpen && optionsHtml ? '1px solid var(--border)' : 'none'};">
+        ${optionsHtml || '<div style="padding:14px 16px;font-size:13px;color:var(--muted);">No options</div>'}
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function toggleAddonGroup(header) {
+  const card = header.parentElement;
+  const body = card.querySelector('.addon-body');
+  const chevron = header.querySelector('.addon-chevron');
+  const isOpen = body.style.display !== 'none';
+
+  // Close all
+  document.querySelectorAll('.addon-body').forEach(b => {
+    b.style.display = 'none';
+    b.style.borderTop = 'none';
+  });
+  document.querySelectorAll('.addon-chevron').forEach(c => {
+    c.style.transform = 'rotate(0deg)';
+  });
+
+  // Open clicked if it was closed
+  if (!isOpen) {
+    body.style.display = 'block';
+    body.style.borderTop = '1px solid var(--border)';
+    chevron.style.transform = 'rotate(180deg)';
+  }
+}
 }
 
 // ── REIMPORT ADDONS ──
