@@ -262,14 +262,14 @@
   .badge-variable { background: rgba(245, 158, 11, 0.15); color: var(--yellow); }
 
   /* ── TOGGLE ── */
-  .toggle {
+.toggle {
     position: relative;
     width: 36px;
     height: 20px;
     cursor: pointer;
+    display: inline-block;
+    flex-shrink: 0;
   }
-
-  .toggle input { display: none; }
 
   .toggle-slider {
     position: absolute;
@@ -277,9 +277,12 @@
     background: var(--border);
     border-radius: 20px;
     transition: background 0.2s;
+    display: block;
   }
 
-  .toggle-slider::after {
+  .toggle input { display: none; }
+
+.toggle-slider::after {
     content: '';
     position: absolute;
     width: 14px;
@@ -289,6 +292,7 @@
     top: 3px;
     left: 3px;
     transition: transform 0.2s;
+    pointer-events: none;
   }
 
   .toggle input:checked + .toggle-slider { background: var(--accent); }
@@ -571,6 +575,7 @@
       </div>
       <div class="toolbar-right">
         <button class="btn btn-secondary" onclick="loadProducts()">↻ Refresh</button>
+        <button class="btn btn-success" id="save-all-prices-btn" onclick="saveAllPrices()" style="display:none">💾 Save All Prices</button>
         <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
       </div>
     </div>
@@ -887,12 +892,26 @@ function renderProducts(products) {
       </td>
       <td style="font-size:12px;color:var(--muted)">${cats}</td>
       <td><span class="badge badge-${p.type}">${p.type}</span></td>
-      <td class="price-cell">CHF ${p.price}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:12px;color:var(--muted)">CHF</span>
+          <input
+            type="number"
+            step="0.05"
+            value="${p.price}"
+            data-product-id="${p.id}"
+            data-original-price="${p.price}"
+            class="price-input"
+            oninput="markPriceChanged(this)"
+            style="width:70px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--accent2);background:var(--bg);border:1px solid var(--border);border-radius:6px;outline:none;"
+          >
+        </div>
+      </td>
       <td>
         <label class="toggle" onclick="event.stopPropagation()">
-  <input type="checkbox" ${p.active === true ? 'checked' : ''} onchange="toggleProduct('${p.id}', this.checked)">
-  <span class="toggle-slider"></span>
-</label>
+          <input type="checkbox" ${p.active === true ? 'checked' : ''} onchange="toggleProduct('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
       </td>
       <td>
         <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px" onclick="openEditProduct('${p.id}')">Edit</button>
@@ -901,6 +920,76 @@ function renderProducts(products) {
   }).join('');
 
   document.getElementById('products-table').innerHTML = rows;
+  updateSaveAllBtn();
+}
+
+function markPriceChanged(input) {
+  const original = parseFloat(input.dataset.originalPrice);
+  const current = parseFloat(input.value);
+  if (current !== original) {
+    input.style.borderColor = 'var(--yellow)';
+    input.style.color = 'var(--yellow)';
+  } else {
+    input.style.borderColor = 'var(--border)';
+    input.style.color = 'var(--accent2)';
+  }
+  updateSaveAllBtn();
+}
+
+function updateSaveAllBtn() {
+  const btn = document.getElementById('save-all-prices-btn');
+  if (!btn) return;
+  const changed = document.querySelectorAll('.price-input').length > 0;
+  btn.style.display = changed ? 'inline-flex' : 'none';
+}
+
+async function saveAllPrices() {
+  const inputs = document.querySelectorAll('.price-input');
+  const changed = [];
+  inputs.forEach(input => {
+    const original = parseFloat(input.dataset.originalPrice);
+    const current = parseFloat(input.value);
+    if (current !== original) {
+      changed.push({ id: input.dataset.productId, price: current });
+    }
+  });
+
+  if (changed.length === 0) { showToast('No prices changed', 'error'); return; }
+
+  const btn = document.getElementById('save-all-prices-btn');
+  btn.disabled = true;
+  btn.textContent = `Saving ${changed.length} prices...`;
+
+  let saved = 0;
+  let failed = 0;
+  for (const item of changed) {
+    try {
+      const res = await fetch(`${BACKEND}/posup/product/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price: item.price })
+      });
+      const data = await res.json();
+      if (data.success) {
+        saved++;
+        // Update original price so it resets color
+        const input = document.querySelector(`.price-input[data-product-id="${item.id}"]`);
+        if (input) {
+          input.dataset.originalPrice = item.price;
+          input.style.borderColor = 'var(--border)';
+          input.style.color = 'var(--accent2)';
+          // Update in allProducts
+          const p = allProducts.find(p => p.id === item.id);
+          if (p) p.price = item.price;
+        }
+      } else { failed++; }
+    } catch(e) { failed++; }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '💾 Save All Prices';
+  if (failed === 0) showToast(`✓ ${saved} prices saved`, 'success');
+  else showToast(`${saved} saved, ${failed} failed`, 'error');
 }
 
 async function toggleProduct(productId, active) {
