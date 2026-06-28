@@ -1258,8 +1258,8 @@ function renderAddons() {
     const card = document.createElement('div');
     card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;';
 
-    const isOpen = index === 0;
-
+    const isOpen = false;
+    
     card.innerHTML = `
       <div onclick="toggleAddonGroup(this)" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
         <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
