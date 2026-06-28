@@ -455,9 +455,14 @@
   .cat-filter {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     margin-bottom: 16px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
   }
+
+  .cat-filter::-webkit-scrollbar { display: none; }
 
   .cat-pill {
     padding: 4px 12px;
@@ -592,16 +597,17 @@
   <!-- ADDONS PAGE -->
   <div class="page" id="page-addons">
     <div class="page-title">Addon Groups</div>
-    <div class="page-sub">Manage addon options assigned to categories and products</div>
+    <div class="page-sub">Addons are managed in WordPress/Orderable. Import here to sync.</div>
     <div class="toolbar">
       <div class="toolbar-left"></div>
       <div class="toolbar-right">
         <button class="btn btn-secondary" onclick="loadAddons()">↻ Refresh</button>
+        <button class="btn btn-primary" id="addon-import-btn" onclick="reimportAddons()">⬇ Import from WordPress</button>
       </div>
     </div>
+    <div id="addon-import-result" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:10px;font-size:13px;"></div>
     <div id="addons-list"></div>
   </div>
-
   <!-- IMPORT PAGE -->
   <div class="page" id="page-import">
     <div class="page-title">Import from WordPress</div>
@@ -1032,6 +1038,40 @@ function renderAddons() {
   document.getElementById('addons-list').innerHTML = html;
 }
 
+// ── REIMPORT ADDONS ──
+async function reimportAddons() {
+  const restaurant = currentRestaurant;
+  if (!restaurant) { showToast('Select a restaurant first', 'error'); return; }
+
+  const btn = document.getElementById('addon-import-btn');
+  const resultEl = document.getElementById('addon-import-result');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  resultEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/reimport/${restaurant}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      resultEl.style.cssText = 'display:block;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;';
+      resultEl.textContent = `✓ Import successful! ${data.imported.categories} categories, ${data.imported.products} products, ${data.imported.addons} addon groups imported.`;
+      await loadAddons();
+    } else {
+      throw new Error(data.error || 'Import failed');
+    }
+  } catch(e) {
+    resultEl.style.cssText = 'display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;';
+    resultEl.textContent = '✗ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Import from WordPress';
+  }
+}
+  
 // ── IMPORT ──
 async function triggerImport() {
   const code = document.getElementById('import-code').value.trim();
