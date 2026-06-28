@@ -581,7 +581,7 @@
     </div>
     <div style="display:flex;gap:16px;align-items:flex-start">
       <!-- Category Sidebar -->
-      <div id="product-cat-sidebar" style="width:200px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:72px"></div>
+      <div id="product-cat-sidebar" style="width:250px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:72px"></div>
       <!-- Products Table -->
       <div style="flex:1;min-width:0">
         <div class="card" style="padding:0">
@@ -844,22 +844,14 @@ function renderCategoryFilter() {
   ].concat(allCategories.map(c => {
     const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
     // Find variations in this category
-const variationNames = new Set();
-    allProducts.filter(p => p.category_ids.includes(c.id)).forEach(p => {
-      (p.variations || []).forEach(v => {
-        const clean = v.name.replace(/^.*?-\s*/,'').trim();
-        if (clean) variationNames.add(clean);
-      });
-    });
-    // Also add addon group names assigned to this category
-    const addonNames = new Set();
-    allAddons.filter(a => a.assigned_category_ids.includes(c.id)).forEach(a => {
-      addonNames.add(a.name);
-    });
-    const tags = [...variationNames, ...addonNames].slice(0, 3);
+const hasVariables = allProducts.some(p => p.category_ids.includes(c.id) && p.variations?.length > 0);
+    const addonNames = allAddons
+      .filter(a => a.assigned_category_ids.includes(c.id))
+      .map(a => a.name);
+    const tags = [];
+    if (hasVariables) tags.push('⚡ Variable');
+    addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
     return { id: c.id, name: c.name, count, variations: tags };
-  }));
-
   const html = items.map((item, i) => `
     <div
       onclick="setCategoryFilter('${item.id}', this)"
