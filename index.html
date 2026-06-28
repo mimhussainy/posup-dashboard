@@ -1073,10 +1073,7 @@ function adjustPriceInput(button, change) {
 function updateSaveAllBtn() {
   const btn = document.getElementById('save-all-prices-btn');
   if (!btn) return;
-  const hasChanged = Array.from(document.querySelectorAll('.price-input')).some(input => {
-    return parseFloat(input.value) !== parseFloat(input.dataset.originalPrice);
-  });
-  btn.style.display = hasChanged ? 'inline-flex' : 'none';
+  btn.style.display = document.querySelectorAll('.price-input').length > 0 ? 'inline-flex' : 'none';
 }
 
 async function saveAllPrices() {
