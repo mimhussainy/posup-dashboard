@@ -565,7 +565,7 @@
     </div>
   </div>
 
-  <!-- PRODUCTS PAGE -->
+<!-- PRODUCTS PAGE -->
   <div class="page" id="page-products">
     <div class="page-title">Products</div>
     <div class="page-sub">Manage menu items for the selected restaurant</div>
@@ -579,22 +579,27 @@
         <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
       </div>
     </div>
-    <div class="cat-filter" id="product-cat-filter"></div>
-    <div class="card" style="padding:0">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Price</th>
-              <th>Active</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="products-table"></tbody>
-        </table>
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <!-- Category Sidebar -->
+      <div id="product-cat-sidebar" style="width:200px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:72px"></div>
+      <!-- Products Table -->
+      <div style="flex:1;min-width:0">
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Type</th>
+                  <th>Price</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="products-table"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -834,18 +839,47 @@ async function loadProducts() {
 }
 
 function renderCategoryFilter() {
-  const pills = `<button class="cat-pill active" onclick="setCategoryFilter('all', this)">All (${allProducts.length})</button>` +
-    allCategories.map(c => {
-      const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
-      return `<button class="cat-pill" onclick="setCategoryFilter('${c.id}', this)">${c.name} (${count})</button>`;
-    }).join('');
-  document.getElementById('product-cat-filter').innerHTML = pills;
+  const items = [
+    { id: 'all', name: 'All Products', count: allProducts.length }
+  ].concat(allCategories.map(c => {
+    const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
+    // Find variations in this category
+    const variationNames = new Set();
+    allProducts.filter(p => p.category_ids.includes(c.id)).forEach(p => {
+      (p.variations || []).forEach(v => {
+        // Extract clean variation name (remove product name prefix)
+        const clean = v.name.replace(/^.*?-\s*/,'').trim();
+        if (clean) variationNames.add(clean);
+      });
+    });
+    return { id: c.id, name: c.name, count, variations: [...variationNames].slice(0, 3) };
+  }));
+
+  const html = items.map((item, i) => `
+    <div
+      onclick="setCategoryFilter('${item.id}', this)"
+      data-cat-id="${item.id}"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;${i === 0 ? 'background:rgba(124,92,252,0.12);' : ''}"
+      onmouseover="this.style.background='rgba(124,92,252,0.08)'"
+      onmouseout="if(this.dataset.catId !== selectedCategoryId) this.style.background='${i === 0 && selectedCategoryId === 'all' ? 'rgba(124,92,252,0.12)' : 'transparent'}'"
+    >
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:var(--text)">${item.name}</span>
+        <span style="font-size:11px;color:var(--muted);background:var(--border);padding:1px 7px;border-radius:20px">${item.count}</span>
+      </div>
+      ${item.variations?.length > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${item.variations.join(' · ')}</div>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('product-cat-sidebar').innerHTML = html;
 }
 
 function setCategoryFilter(id, el) {
   selectedCategoryId = id;
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
+  // Update sidebar styles
+  document.querySelectorAll('#product-cat-sidebar > div').forEach(d => {
+    d.style.background = d.dataset.catId === id ? 'rgba(124,92,252,0.12)' : 'transparent';
+  });
   filterProducts();
 }
 
@@ -871,7 +905,7 @@ function renderProducts(products) {
   }
 
   const rows = products.map(p => {
-    const cats = allCategories.filter(c => p.category_ids.includes(c.id)).map(c => c.name).join(', ');
+    
     const img = p.image_url
       ? `<img class="product-img" src="${p.image_url}" onerror="this.style.display='none'">`
       : `<div class="product-img-placeholder">🍽</div>`;
@@ -890,7 +924,7 @@ function renderProducts(products) {
           </div>
         </div>
       </td>
-      <td style="font-size:12px;color:var(--muted)">${cats}</td>
+      
       <td><span class="badge badge-${p.type}">${p.type}</span></td>
       <td>
         <div style="display:flex;align-items:center;gap:4px">
