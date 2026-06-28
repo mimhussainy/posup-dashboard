@@ -832,7 +832,7 @@ function showPage(name) {
   if (allProducts.length === 0) loadProducts();
   else { renderCategoryFilter(); filterProducts(); }
 }
-  if (name === 'addons' && allAddons.length === 0) loadAddons();
+  if (name === 'addons') loadAddons();
   if (name === 'import') loadRestaurantsList();
   if (name === 'overview') loadOverview();
 }
@@ -1208,6 +1208,13 @@ async function saveProduct() {
 // ── ADDONS ──
 async function loadAddons() {
   if (!currentRestaurant) return;
+
+  // Use cached data if available
+  if (allAddons.length > 0) {
+    renderAddons();
+    return;
+  }
+
   document.getElementById('addons-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
   try {
