@@ -844,15 +844,20 @@ function renderCategoryFilter() {
   ].concat(allCategories.map(c => {
     const count = allProducts.filter(p => p.category_ids.includes(c.id)).length;
     // Find variations in this category
-    const variationNames = new Set();
+const variationNames = new Set();
     allProducts.filter(p => p.category_ids.includes(c.id)).forEach(p => {
       (p.variations || []).forEach(v => {
-        // Extract clean variation name (remove product name prefix)
         const clean = v.name.replace(/^.*?-\s*/,'').trim();
         if (clean) variationNames.add(clean);
       });
     });
-    return { id: c.id, name: c.name, count, variations: [...variationNames].slice(0, 3) };
+    // Also add addon group names assigned to this category
+    const addonNames = new Set();
+    allAddons.filter(a => a.assigned_category_ids.includes(c.id)).forEach(a => {
+      addonNames.add(a.name);
+    });
+    const tags = [...variationNames, ...addonNames].slice(0, 3);
+    return { id: c.id, name: c.name, count, variations: tags };
   }));
 
   const html = items.map((item, i) => `
