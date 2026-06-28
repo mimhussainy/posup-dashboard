@@ -803,14 +803,13 @@ function doLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  loadRestaurants();
-  const savedPage = sessionStorage.getItem('posup_page');
-  if (savedPage) {
-    setTimeout(() => {
+  loadRestaurants().then(() => {
+    const savedPage = sessionStorage.getItem('posup_page');
+    if (savedPage && savedPage !== 'overview') {
       const tab = Array.from(document.querySelectorAll('.nav-tab')).find(t => t.getAttribute('onclick').includes(savedPage));
       if (tab) tab.click();
-    }, 100);
-  }
+    }
+  });
 }
 function checkAuth() {
   const local = localStorage.getItem('posup_auth');
@@ -843,13 +842,10 @@ function showPage(name) {
 // ── RESTAURANT ──
 async function loadRestaurants() {
   try {
-    const res = await fetch(`${BACKEND}/posup/products/eatime`);
-    const data = await res.json();
-    // For now seed with known restaurants — will expand later
     const sel = document.getElementById('restaurant-select');
     sel.innerHTML = '<option value="eatime">Eatime</option><option value="grillhouse">Grillhouse</option><option value="heidis">Heidis</option>';
     currentRestaurant = 'eatime';
-    loadOverview();
+    await loadOverview();
   } catch(e) {
     console.error(e);
   }
