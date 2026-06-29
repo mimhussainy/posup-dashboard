@@ -1024,7 +1024,7 @@ function renderProducts(products) {
                 data-overridden="${p.price_overridden ? '1' : '0'}"
                 class="price-input"
               oninput="markPriceChanged(this)"
-              onkeydown="if(event.key==='Tab'){event.preventDefault();focusNextPrice(this);}"
+              onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusPrevPrice(this):focusNextPrice(this);}"
               >
               <div class="price-stepper-buttons">
                 <button type="button" class="price-stepper-btn" onclick="adjustPriceInput(this, 0.5)">▲</button>
@@ -1445,6 +1445,14 @@ function focusNextPrice(input) {
   }
 }
 
+function focusPrevPrice(input) {
+  const inputs = Array.from(document.querySelectorAll('.price-input'));
+  const idx = inputs.indexOf(input);
+  if (idx > 0) {
+    inputs[idx - 1].focus();
+    inputs[idx - 1].select();
+  }
+}
 // ── TOAST ──
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
