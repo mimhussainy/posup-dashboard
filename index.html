@@ -692,10 +692,12 @@
             <table>
               <thead>
                 <tr>
-                  <th>Product</th>
+                  <thead>
+                <tr>
+                  <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;">Product <span id="sort-name">↕</span></th>
                   <th>Type</th>
-                  <th>Price</th>
-                  <th>Active</th>
+                  <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;">Price <span id="sort-price">↕</span></th>
+                  <th onclick="sortProducts('active')" style="cursor:pointer;user-select:none;">Active <span id="sort-active">↕</span></th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -1011,6 +1013,15 @@ function filterProducts() {
 
   if (search) {
     filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search));
+  }
+
+  if (sortField) {
+    filtered = [...filtered].sort((a, b) => {
+      if (sortField === 'name') return a.name.localeCompare(b.name) * sortDir;
+      if (sortField === 'price') return (a.price - b.price) * sortDir;
+      if (sortField === 'active') return (b.active === a.active ? 0 : a.active ? -1 : 1) * sortDir;
+      return 0;
+    });
   }
 
   renderProducts(filtered);
@@ -1588,6 +1599,27 @@ function focusPrevName(input) {
     inputs[idx - 1].focus();
     inputs[idx - 1].select();
   }
+}
+
+// ── SORTING ──
+let sortField = null;
+let sortDir = 1;
+
+function sortProducts(field) {
+  if (sortField === field) {
+    sortDir *= -1;
+  } else {
+    sortField = field;
+    sortDir = 1;
+  }
+
+  // Update indicators
+  ['name', 'price', 'active'].forEach(f => {
+    const el = document.getElementById('sort-' + f);
+    if (el) el.textContent = f === field ? (sortDir === 1 ? '↑' : '↓') : '↕';
+  });
+
+  filterProducts();
 }
   
 // ── TOAST ──
