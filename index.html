@@ -842,10 +842,16 @@ async function loadRestaurants() {
   try {
     const res = await fetch(`${BACKEND}/posup/restaurants`);
     const data = await res.json();
-    const sel = document.getElementById('restaurant-select');
+const sel = document.getElementById('restaurant-select');
     if (data.success && data.restaurants.length > 0) {
       sel.innerHTML = data.restaurants.map(r => `<option value="${r.code}">${r.name}</option>`).join('');
-      currentRestaurant = data.restaurants[0].code;
+      const saved = sessionStorage.getItem('posup_restaurant');
+      if (saved && data.restaurants.find(r => r.code === saved)) {
+        sel.value = saved;
+        currentRestaurant = saved;
+      } else {
+        currentRestaurant = data.restaurants[0].code;
+      }
     } else {
       sel.innerHTML = '<option value="">No restaurants</option>';
     }
@@ -857,6 +863,7 @@ async function loadRestaurants() {
 
 function onRestaurantChange() {
   currentRestaurant = document.getElementById('restaurant-select').value;
+  sessionStorage.setItem('posup_restaurant', currentRestaurant);
   allProducts = [];
   allCategories = [];
   allAddons = [];
@@ -1414,10 +1421,14 @@ async function loadRestaurantsList() {
       </div>
     `).join('');
 
-    // Also update restaurant selector
+    // Also update restaurant selector — preserve current selection
     const sel = document.getElementById('restaurant-select');
+    const previousRestaurant = currentRestaurant;
     sel.innerHTML = data.restaurants.map(r => `<option value="${r.code}">${r.name}</option>`).join('');
-    if (!currentRestaurant && data.restaurants.length > 0) {
+    if (previousRestaurant && data.restaurants.find(r => r.code === previousRestaurant)) {
+      sel.value = previousRestaurant;
+      currentRestaurant = previousRestaurant;
+    } else if (!currentRestaurant && data.restaurants.length > 0) {
       currentRestaurant = data.restaurants[0].code;
     }
   } catch(e) {
