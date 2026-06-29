@@ -678,7 +678,7 @@
       <input class="search-bar" type="text" placeholder="Search products..." id="product-search" oninput="filterProducts()" onkeydown="if(event.key==='Escape'){this.value='';filterProducts();}" style="width:100%;margin:0;">
       <div style="display:flex;justify-content:flex-end;gap:10px;">
         <button class="btn btn-secondary" onclick="loadProducts()">↻ Refresh</button>
-        <button class="btn btn-success" id="save-all-prices-btn" onclick="saveAllPrices()" style="display:none">💾 Save All Prices</button>
+        <button class="btn btn-success" id="save-all-prices-btn" onclick="saveAllPrices()" style="display:none">💾 Save All Changes</button>
         <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
       </div>
     </div>
@@ -1146,7 +1146,7 @@ async function saveAllPrices() {
   if (changed.length === 0) { showToast('No prices changed', 'error'); return; }
   const btn = document.getElementById('save-all-prices-btn');
   btn.disabled = true;
-  btn.textContent = `Saving ${changed.length} prices...`;
+  btn.textContent = `Saving changes...`;
 
   let saved = 0;
   let failed = 0;
@@ -1187,7 +1187,7 @@ async function saveAllPrices() {
   }
 
   btn.disabled = false;
-  btn.textContent = '💾 Save All Prices';
+btn.textContent = '💾 Save All Changes';
   if (failed === 0) showToast(`✓ ${saved} prices saved`, 'success');
   else showToast(`${saved} saved, ${failed} failed`, 'error');
 }
