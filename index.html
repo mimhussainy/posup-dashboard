@@ -1031,8 +1031,19 @@ function renderProducts(products) {
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           ${img}
-          <div>
-            <div style="font-weight:600;font-size:13px">${p.name}</div>
+          <div style="flex:1;min-width:0;">
+            <input
+              type="text"
+              value="${p.name.replace(/"/g, '&quot;')}"
+              data-product-id="${p.id}"
+              data-original-name="${p.name.replace(/"/g, '&quot;')}"
+              class="name-input"
+              style="background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);font-weight:600;font-size:13px;width:100%;outline:none;padding:2px 0;transition:border-color 0.15s;"
+              oninput="markNameChanged(this)"
+              onfocus="this.style.borderBottomColor='var(--accent)'"
+              onblur="this.style.borderBottomColor='transparent';saveNameIfChanged(this)"
+              onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusPrevName(this):focusNextName(this);}if(event.key==='Enter'){this.blur();}"
+            >
             ${p.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${p.description.substring(0,60)}${p.description.length>60?'...':''}</div>` : ''}
             ${variations}
           </div>
@@ -1497,6 +1508,67 @@ function focusPrevPrice(input) {
     inputs[idx - 1].select();
   }
 }
+
+  // ── NAME INLINE EDIT ──
+function markNameChanged(input) {
+  const original = input.dataset.originalName;
+  if (input.value !== original) {
+    input.style.color = 'var(--yellow)';
+  } else {
+    input.style.color = 'var(--text)';
+  }
+}
+
+async function saveNameIfChanged(input) {
+  const original = input.dataset.originalName;
+  if (input.value.trim() === original || input.value.trim() === '') {
+    input.value = original;
+    input.style.color = 'var(--text)';
+    return;
+  }
+  try {
+    const res = await fetch(`${BACKEND}/posup/product/${input.dataset.productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: input.value.trim() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.dataset.originalName = input.value.trim();
+      input.style.color = 'var(--text)';
+      const p = allProducts.find(p => p.id === input.dataset.productId);
+      if (p) p.name = input.value.trim();
+      showToast('✓ Name saved', 'success');
+    } else {
+      input.value = original;
+      input.style.color = 'var(--text)';
+      showToast('Failed to save name', 'error');
+    }
+  } catch(e) {
+    input.value = original;
+    input.style.color = 'var(--text)';
+    showToast('Error saving name', 'error');
+  }
+}
+
+function focusNextName(input) {
+  const inputs = Array.from(document.querySelectorAll('.name-input'));
+  const idx = inputs.indexOf(input);
+  if (idx >= 0 && idx < inputs.length - 1) {
+    inputs[idx + 1].focus();
+    inputs[idx + 1].select();
+  }
+}
+
+function focusPrevName(input) {
+  const inputs = Array.from(document.querySelectorAll('.name-input'));
+  const idx = inputs.indexOf(input);
+  if (idx > 0) {
+    inputs[idx - 1].focus();
+    inputs[idx - 1].select();
+  }
+}
+  
 // ── TOAST ──
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
