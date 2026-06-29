@@ -860,10 +860,14 @@ function onRestaurantChange() {
   allProducts = [];
   allCategories = [];
   allAddons = [];
-  loadOverview();
-  // Reset other pages
   document.getElementById('products-table').innerHTML = '';
   document.getElementById('addons-list').innerHTML = '';
+
+  // Reload whichever page is currently active
+  const activePage = sessionStorage.getItem('posup_page') || 'overview';
+  if (activePage === 'products') loadProducts();
+  else if (activePage === 'addons') loadAddons(true);
+  else if (activePage === 'overview') loadOverview();
 }
 
 // ── OVERVIEW ──
