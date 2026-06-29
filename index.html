@@ -781,6 +781,10 @@
       <div class="field-label">Image URL</div>
       <input type="text" id="edit-image-url">
     </div>
+    <div class="form-row" id="edit-category-row" style="display:none">
+      <div class="field-label">Category</div>
+      <select id="edit-category"></select>
+    </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
       <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveProduct()">Save Changes</button>
@@ -1222,6 +1226,7 @@ function openEditProduct(productId) {
   document.getElementById('edit-price').value = p.price;
   document.getElementById('edit-active').value = String(p.active);
   document.getElementById('edit-image-url').value = p.image_url || '';
+  document.getElementById('edit-category-row').style.display = 'none';
   openModal('product-modal');
 }
 
@@ -1233,6 +1238,14 @@ function openAddProduct() {
   document.getElementById('edit-price').value = '';
   document.getElementById('edit-active').value = 'true';
   document.getElementById('edit-image-url').value = '';
+
+  // Show category dropdown for new products
+  const catRow = document.getElementById('edit-category-row');
+  const catSel = document.getElementById('edit-category');
+  catRow.style.display = 'block';
+  catSel.innerHTML = '<option value="">— No category —</option>' +
+    allCategories.map(c => `<option value="${c.id}" ${c.id === selectedCategoryId ? 'selected' : ''}>${c.name}</option>`).join('');
+
   openModal('product-modal');
 }
 
@@ -1255,10 +1268,11 @@ async function saveProduct() {
       method = 'POST';
     }
 
+    const categoryId = !editingProductId ? document.getElementById('edit-category').value : null;
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, price, active, image_url, restaurant_code: currentRestaurant })
+      body: JSON.stringify({ name, description, price, active, image_url, restaurant_code: currentRestaurant, category_id: categoryId })
     });
     const data = await res.json();
 
