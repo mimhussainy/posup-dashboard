@@ -1125,6 +1125,14 @@ function updateSaveAllBtn() {
 }
 
 async function saveAllPrices() {
+  // Save changed names first
+  const nameInputs = document.querySelectorAll('.name-input');
+  for (const input of nameInputs) {
+    if (input.value.trim() !== input.dataset.originalName) {
+      await saveNameIfChanged(input);
+    }
+  }
+
   const inputs = document.querySelectorAll('.price-input');
   const changed = [];
   inputs.forEach(input => {
@@ -1136,7 +1144,6 @@ async function saveAllPrices() {
   });
 
   if (changed.length === 0) { showToast('No prices changed', 'error'); return; }
-
   const btn = document.getElementById('save-all-prices-btn');
   btn.disabled = true;
   btn.textContent = `Saving ${changed.length} prices...`;
