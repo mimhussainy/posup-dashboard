@@ -518,6 +518,29 @@
     -moz-appearance: textfield;
   }
 
+  /* Stable scrollbar — always visible, very thin */
+  html {
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+
   .price-stepper {
     width: 88px;
     height: 32px;
