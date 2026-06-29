@@ -785,7 +785,11 @@
     </div>
     <div class="form-row" id="edit-category-row" style="display:none">
       <div class="field-label">Category</div>
-      <select id="edit-category"></select>
+      <select id="edit-category" onchange="toggleNewCategory(this)"></select>
+    </div>
+    <div class="form-row" id="new-category-row" style="display:none">
+      <div class="field-label">New Category Name</div>
+      <input type="text" id="new-category-name" placeholder="e.g. Desserts">
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
       <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
@@ -1255,7 +1259,9 @@ function openAddProduct() {
   const catSel = document.getElementById('edit-category');
   catRow.style.display = 'block';
   catSel.innerHTML = '<option value="">— No category —</option>' +
-    allCategories.map(c => `<option value="${c.id}" ${c.id === selectedCategoryId ? 'selected' : ''}>${c.name}</option>`).join('');
+    allCategories.map(c => `<option value="${c.id}" ${c.id === selectedCategoryId ? 'selected' : ''}>${c.name}</option>`).join('') +
+    '<option value="__new__">+ Add new category...</option>';
+  document.getElementById('new-category-row').style.display = 'none';
 
   openModal('product-modal');
 }
@@ -1279,7 +1285,23 @@ async function saveProduct() {
       method = 'POST';
     }
 
-    const categoryId = !editingProductId ? document.getElementById('edit-category').value : null;
+let categoryId = !editingProductId ? document.getElementById('edit-category').value : null;
+
+    // Create new category if needed
+    if (categoryId === '__new__') {
+      const newCatName = document.getElementById('new-category-name').value.trim();
+      if (!newCatName) { showToast('Please enter a category name', 'error'); return; }
+      const catRes = await fetch(`${BACKEND}/posup/category`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName, restaurant_code: currentRestaurant })
+      });
+      const catData = await catRes.json();
+      if (!catData.success) { showToast('Failed to create category', 'error'); return; }
+      categoryId = catData.category.id;
+      allCategories.push(catData.category);
+    }
+
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -1620,6 +1642,14 @@ function sortProducts(field) {
   });
 
   filterProducts();
+}
+
+  function toggleNewCategory(sel) {
+  const newRow = document.getElementById('new-category-row');
+  newRow.style.display = sel.value === '__new__' ? 'block' : 'none';
+  if (sel.value === '__new__') {
+    document.getElementById('new-category-name').focus();
+  }
 }
   
 // ── TOAST ──
