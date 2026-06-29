@@ -1023,7 +1023,8 @@ function renderProducts(products) {
                 data-original-price="${p.price}"
                 data-overridden="${p.price_overridden ? '1' : '0'}"
                 class="price-input"
-                oninput="markPriceChanged(this)"
+              oninput="markPriceChanged(this)"
+              onkeydown="if(event.key==='Tab'){event.preventDefault();focusNextPrice(this);}"
               >
               <div class="price-stepper-buttons">
                 <button type="button" class="price-stepper-btn" onclick="adjustPriceInput(this, 0.5)">▲</button>
@@ -1433,6 +1434,16 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
+
+// ── PRICE TAB NAVIGATION ──
+function focusNextPrice(input) {
+  const inputs = Array.from(document.querySelectorAll('.price-input'));
+  const idx = inputs.indexOf(input);
+  if (idx >= 0 && idx < inputs.length - 1) {
+    inputs[idx + 1].focus();
+    inputs[idx + 1].select();
+  }
+}
 
 // ── TOAST ──
 function showToast(msg, type = 'success') {
