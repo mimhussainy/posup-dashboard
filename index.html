@@ -1118,19 +1118,29 @@ async function saveAllPrices() {
       });
       const data = await res.json();
       if (data.success) {
-        saved++;
-        // Update original price so it resets color
-        const input = document.querySelector(`.price-input[data-product-id="${item.id}"]`);
-                if (input) {
-          input.dataset.originalPrice = item.price;
+          saved++;
+          const input = document.querySelector(`.price-input[data-product-id="${item.id}"]`);
+          if (input) {
+            input.dataset.originalPrice = item.price;
+            input.dataset.overridden = '1';
 
-          const wrapper = input.closest('.price-stepper');
-          if (wrapper) wrapper.classList.remove('changed');
+            const wrapper = input.closest('.price-stepper');
+            if (wrapper) wrapper.classList.remove('changed');
 
-          // Update in allProducts
-          const p = allProducts.find(p => p.id === item.id);
-          if (p) p.price = item.price;
-        }
+            // Show orange dot immediately
+            const td = input.closest('td');
+            if (td) {
+              const dot = td.querySelector('span[style*="border-radius:50%"]');
+              if (dot) {
+                dot.style.background = 'var(--yellow)';
+                dot.title = 'Price manually overridden — protected from WP import';
+              }
+            }
+
+            // Update in allProducts
+            const p = allProducts.find(p => p.id === item.id);
+            if (p) { p.price = item.price; p.price_overridden = true; }
+          }
       } else { failed++; }
     } catch(e) { failed++; }
   }
