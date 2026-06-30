@@ -635,41 +635,238 @@
     font-weight: 900;
   }
 
-  .category-grid {
+  .overview-main-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .overview-stack {
+    display: grid;
+    gap: 16px;
+  }
+
+  .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .category-tile {
+  .quick-action {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    min-height: 108px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fff, #f8fafc);
+    cursor: pointer;
+    color: var(--text);
+    text-align: left;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .quick-action:hover {
+    transform: translateY(-1px);
+    border-color: rgba(109, 56, 255, 0.30);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .quick-action-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 650;
+  }
+
+  .quick-action-title {
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .quick-action-sub {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+    font-weight: 450;
+  }
+
+  .attention-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .attention-item {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface-2);
+  }
+
+  .attention-item.good {
+    border-color: rgba(22, 163, 74, 0.22);
+    background: rgba(22, 163, 74, 0.055);
+  }
+
+  .attention-icon {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  .attention-title {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .attention-sub {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 450;
+  }
+
+  .attention-count {
+    min-width: 38px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .attention-count.warn {
+    color: var(--yellow);
+    background: var(--yellow-soft);
+    border-color: rgba(217, 119, 6, 0.22);
+  }
+
+  .quality-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .quality-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .quality-label {
+    font-size: 13px;
+    color: var(--text-soft);
+    font-weight: 550;
+  }
+
+  .quality-value {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .quality-meter {
+    grid-column: 1 / -1;
+    height: 9px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    border: 1px solid rgba(203, 213, 225, 0.70);
+  }
+
+  .quality-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    transition: width 0.25s ease;
+  }
+
+  .snapshot-list {
+    display: grid;
+    gap: 0;
+  }
+
+  .snapshot-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 13px 14px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    border-radius: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
   }
 
-  .category-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 13px;
-    font-weight: 800;
+  .snapshot-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 
-  .category-count {
-    flex-shrink: 0;
-    font-size: 11px;
+  .snapshot-key {
     color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .snapshot-value {
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .issue-filter-banner {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -4px 0 16px;
+    padding: 11px 13px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(109, 56, 255, 0.18);
+    color: var(--text-soft);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .issue-filter-banner button {
+    border: 0;
     background: #fff;
-    border: 1px solid var(--border);
+    color: var(--accent);
     border-radius: 999px;
-    padding: 4px 8px;
-    font-weight: 800;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
   }
 
   /* ─────────────────────────────────────────────
@@ -1370,6 +1567,8 @@
     .hero-panel { grid-template-columns: 1fr; }
     .hero-mini { justify-content: flex-start; }
     .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .overview-main-grid { grid-template-columns: 1fr; }
+    .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .products-shell { grid-template-columns: 1fr; }
     .product-cat-sidebar { position: static; }
     .import-layout { grid-template-columns: 1fr; }
@@ -1384,6 +1583,10 @@
     .nav-tabs { justify-content: flex-start; }
     .page-header { flex-direction: column; align-items: flex-start; }
     .stats-row { grid-template-columns: 1fr; }
+    .quick-actions-grid { grid-template-columns: 1fr; }
+    .attention-item { grid-template-columns: 34px minmax(0, 1fr); }
+    .attention-item .attention-count { grid-column: 1 / -1; justify-self: start; }
+    .issue-filter-banner { align-items: flex-start; flex-direction: column; }
     .search-wrap { min-width: 100%; width: 100%; }
     .action-left, .action-right { width: 100%; }
     .action-right .btn, .toolbar-right .btn { flex: 1; }
@@ -1452,7 +1655,7 @@
   <div class="page active" id="page-overview">
     <div class="page-header">
       <div>
-        <div class="page-kicker">Dashboard</div>
+        <div class="page-kicker">Control Center</div>
         <div class="page-title">Overview</div>
         <div class="page-sub" id="overview-sub">Loading restaurant data...</div>
       </div>
@@ -1460,25 +1663,69 @@
 
     <div class="hero-panel">
       <div>
-        <div class="hero-title">Restaurant menu snapshot</div>
-        <div class="hero-text">Quickly see the imported structure, active products, addon groups, and categories for the selected restaurant.</div>
+        <div class="hero-title" id="overview-hero-title">Menu health at a glance</div>
+        <div class="hero-text" id="overview-hero-text">See what needs attention before customers see the menu: inactive products, missing images, manual prices, and addon coverage.</div>
       </div>
       <div class="hero-mini">
-        <span class="mini-chip">● Live backend</span>
-        <span class="mini-chip">↻ WordPress ready</span>
+        <span class="mini-chip" id="overview-health-chip">● Checking menu</span>
+        <span class="mini-chip">↻ WordPress connected</span>
       </div>
     </div>
 
     <div class="stats-row" id="stats-row">
-      <div class="stat-card"><div class="stat-icon">C</div><div class="stat-value" id="stat-categories">—</div><div class="stat-label">Categories</div></div>
-      <div class="stat-card"><div class="stat-icon">P</div><div class="stat-value" id="stat-products">—</div><div class="stat-label">Products</div></div>
+      <div class="stat-card"><div class="stat-icon">P</div><div class="stat-value" id="stat-products">—</div><div class="stat-label">Total Products</div></div>
       <div class="stat-card"><div class="stat-icon">✓</div><div class="stat-value" id="stat-active">—</div><div class="stat-label">Active</div></div>
+      <div class="stat-card"><div class="stat-icon">○</div><div class="stat-value" id="stat-inactive">—</div><div class="stat-label">Inactive</div></div>
       <div class="stat-card"><div class="stat-icon">+</div><div class="stat-value" id="stat-addons">—</div><div class="stat-label">Addon Groups</div></div>
+      <div class="stat-card"><div class="stat-icon">₣</div><div class="stat-value" id="stat-overrides">—</div><div class="stat-label">Manual Prices</div></div>
+      <div class="stat-card"><div class="stat-icon">□</div><div class="stat-value" id="stat-missing-images">—</div><div class="stat-label">Missing Images</div></div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Categories</div>
-      <div id="categories-list" class="loading"><div class="spinner"></div> Loading...</div>
+    <div class="overview-main-grid">
+      <div class="overview-stack">
+        <div class="card">
+          <div class="card-title">Needs attention</div>
+          <div id="overview-attention" class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Quick actions</div>
+          <div class="quick-actions-grid">
+            <button class="quick-action" onclick="showPage('products')">
+              <span class="quick-action-icon">P</span>
+              <span class="quick-action-title">Open Products</span>
+              <span class="quick-action-sub">Edit names, prices, visibility, and product images.</span>
+            </button>
+            <button class="quick-action" onclick="showPage('import')">
+              <span class="quick-action-icon">↓</span>
+              <span class="quick-action-title">Import Products</span>
+              <span class="quick-action-sub">Sync the restaurant menu from WordPress.</span>
+            </button>
+            <button class="quick-action" onclick="showPage('addons')">
+              <span class="quick-action-icon">+</span>
+              <span class="quick-action-title">Manage Addons</span>
+              <span class="quick-action-sub">Review imported addon groups and assignments.</span>
+            </button>
+            <button class="quick-action" onclick="loadOverview()">
+              <span class="quick-action-icon">↻</span>
+              <span class="quick-action-title">Refresh Data</span>
+              <span class="quick-action-sub">Reload the latest saved menu data.</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-stack">
+        <div class="card">
+          <div class="card-title">Menu quality</div>
+          <div id="overview-quality" class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Data snapshot</div>
+          <div id="overview-snapshot" class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1504,6 +1751,8 @@
         <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
       </div>
     </div>
+
+    <div class="issue-filter-banner" id="issue-filter-banner"></div>
 
     <div class="products-shell">
       <div id="product-cat-sidebar" class="product-cat-sidebar"></div>
@@ -1648,6 +1897,7 @@ let selectedCategoryId = 'all';
 let editingProductId = null;
 let sortField = null;
 let sortDir = 1;
+let productIssueFilter = null;
 
 // ── HELPERS ──
 function escapeHtml(value) {
@@ -1671,6 +1921,40 @@ function productInCategory(product, categoryId) {
 function formatPrice(value) {
   const num = Number(value || 0);
   return Number.isInteger(num) ? String(num) : num.toFixed(2).replace(/0$/, '').replace(/\.0$/, '');
+}
+
+function hasProductImage(product) {
+  return String(product.image_url || '').trim().length > 0;
+}
+
+function hasValidProductPrice(product) {
+  const price = Number(product.price);
+  return Number.isFinite(price) && price > 0;
+}
+
+function hasVariations(product) {
+  return Array.isArray(product.variations) && product.variations.length > 0;
+}
+
+function getAddonAssignedIds(addon) {
+  return Array.isArray(addon.assigned_category_ids) ? addon.assigned_category_ids : [];
+}
+
+const PRODUCT_ISSUE_LABELS = {
+  'missing-image': 'Products missing images',
+  'missing-price': 'Products missing prices',
+  'inactive': 'Inactive products',
+  'manual-price': 'Manual price overrides',
+  'variable': 'Variable products'
+};
+
+function matchesProductIssue(product, issue) {
+  if (issue === 'missing-image') return !hasProductImage(product);
+  if (issue === 'missing-price') return !hasValidProductPrice(product);
+  if (issue === 'inactive') return product.active !== true;
+  if (issue === 'manual-price') return product.price_overridden === true;
+  if (issue === 'variable') return hasVariations(product);
+  return true;
 }
 
 function getActivePage() {
@@ -1794,8 +2078,15 @@ function onRestaurantChange() {
 // ── OVERVIEW ──
 async function loadOverview() {
   if (!currentRestaurant) return;
+
+  const attentionEl = document.getElementById('overview-attention');
+  const qualityEl = document.getElementById('overview-quality');
+  const snapshotEl = document.getElementById('overview-snapshot');
+
   document.getElementById('overview-sub').textContent = 'Loading...';
-  document.getElementById('categories-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  if (attentionEl) attentionEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  if (qualityEl) qualityEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  if (snapshotEl) snapshotEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
   try {
     const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
@@ -1803,7 +2094,9 @@ async function loadOverview() {
 
     if (!data.restaurant) {
       document.getElementById('overview-sub').textContent = 'No data imported yet. Go to Import tab.';
-      document.getElementById('categories-list').innerHTML = '<div class="empty-state">No imported data yet</div>';
+      if (attentionEl) attentionEl.innerHTML = '<div class="empty-state">No imported menu data yet</div>';
+      if (qualityEl) qualityEl.innerHTML = '<div class="empty-state">Import products first</div>';
+      if (snapshotEl) snapshotEl.innerHTML = '<div class="empty-state">No restaurant data</div>';
       return;
     }
 
@@ -1811,30 +2104,166 @@ async function loadOverview() {
     allProducts = data.products || [];
     allAddons = data.addons || [];
 
-    const active = allProducts.filter(p => p.active).length;
-    document.getElementById('stat-categories').textContent = allCategories.length;
-    document.getElementById('stat-products').textContent = allProducts.length;
+    const total = allProducts.length;
+    const active = allProducts.filter(p => p.active === true).length;
+    const inactive = total - active;
+    const addons = allAddons.length;
+    const manualPrices = allProducts.filter(p => p.price_overridden === true).length;
+    const missingImages = allProducts.filter(p => !hasProductImage(p)).length;
+    const missingPrices = allProducts.filter(p => !hasValidProductPrice(p)).length;
+    const variableProducts = allProducts.filter(p => hasVariations(p)).length;
+    const unassignedAddons = allAddons.filter(a => getAddonAssignedIds(a).length === 0).length;
+
+    const activePct = total ? Math.round((active / total) * 100) : 0;
+    const imagePct = total ? Math.round(((total - missingImages) / total) * 100) : 0;
+    const addonPct = addons ? Math.round(((addons - unassignedAddons) / addons) * 100) : 100;
+    const healthScore = Math.round((activePct + imagePct + addonPct) / 3);
+
+    document.getElementById('stat-products').textContent = total;
     document.getElementById('stat-active').textContent = active;
-    document.getElementById('stat-addons').textContent = allAddons.length;
-    document.getElementById('overview-sub').textContent = `${data.restaurant.name} — Last imported data`;
+    document.getElementById('stat-inactive').textContent = inactive;
+    document.getElementById('stat-addons').textContent = addons;
+    document.getElementById('stat-overrides').textContent = manualPrices;
+    document.getElementById('stat-missing-images').textContent = missingImages;
 
-    const grid = allCategories.map(c => {
-      const count = allProducts.filter(p => productInCategory(p, c.id)).length;
-      return `<div class="category-tile">
-        <span class="category-name">${escapeHtml(c.name)}</span>
-        <span class="category-count">${count} products</span>
-      </div>`;
-    }).join('');
+    document.getElementById('overview-sub').textContent = `${data.restaurant.name} — ${currentRestaurant}`;
+    document.getElementById('overview-hero-title').textContent = `${data.restaurant.name} menu health`;
+    document.getElementById('overview-health-chip').textContent = `● ${healthScore}% health score`;
 
-    document.getElementById('categories-list').innerHTML = grid
-      ? `<div class="category-grid">${grid}</div>`
-      : '<div class="empty-state">No categories</div>';
+    const issueRows = [
+      {
+        icon: '□',
+        title: 'Products missing images',
+        sub: 'Images make the menu easier for restaurant staff and customers.',
+        count: missingImages,
+        issue: 'missing-image'
+      },
+      {
+        icon: '₣',
+        title: 'Products missing prices',
+        sub: 'Products with empty or zero price should be reviewed.',
+        count: missingPrices,
+        issue: 'missing-price'
+      },
+      {
+        icon: '○',
+        title: 'Inactive products',
+        sub: 'These items are hidden or disabled in the menu.',
+        count: inactive,
+        issue: 'inactive'
+      },
+      {
+        icon: '₣',
+        title: 'Manual price overrides',
+        sub: 'These prices are protected from WordPress re-import changes.',
+        count: manualPrices,
+        issue: 'manual-price'
+      },
+      {
+        icon: '+',
+        title: 'Unassigned addon groups',
+        sub: 'Addon groups without category assignment may not appear where expected.',
+        count: unassignedAddons,
+        action: "showPage('addons')"
+      }
+    ];
+
+    const hasIssues = issueRows.some(row => row.count > 0);
+    if (attentionEl) {
+      attentionEl.innerHTML = hasIssues
+        ? `<div class="attention-list">${issueRows.map(row => renderAttentionRow(row)).join('')}</div>`
+        : `<div class="attention-list">
+            <div class="attention-item good">
+              <div class="attention-icon">✓</div>
+              <div>
+                <div class="attention-title">No urgent menu issues</div>
+                <div class="attention-sub">Products, images, prices, and addon assignments look clean.</div>
+              </div>
+              <span class="attention-count">OK</span>
+            </div>
+          </div>`;
+    }
+
+    if (qualityEl) {
+      qualityEl.innerHTML = `
+        <div class="quality-list">
+          ${renderQualityRow('Active products', activePct)}
+          ${renderQualityRow('Image coverage', imagePct)}
+          ${renderQualityRow('Addon assignment', addonPct)}
+        </div>`;
+    }
+
+    const simpleProducts = allProducts.filter(p => !hasVariations(p)).length;
+    if (snapshotEl) {
+      snapshotEl.innerHTML = `
+        <div class="snapshot-list">
+          <div class="snapshot-row"><span class="snapshot-key">Restaurant code</span><span class="snapshot-value">${escapeHtml(currentRestaurant)}</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Categories</span><span class="snapshot-value">${allCategories.length}</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Simple products</span><span class="snapshot-value">${simpleProducts}</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Variable products</span><span class="snapshot-value">${variableProducts}</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Addon groups</span><span class="snapshot-value">${addons}</span></div>
+        </div>`;
+    }
 
   } catch(e) {
     document.getElementById('overview-sub').textContent = 'Error loading data.';
-    document.getElementById('categories-list').innerHTML = '<div class="empty-state">Error loading categories</div>';
+    if (attentionEl) attentionEl.innerHTML = '<div class="empty-state">Error loading dashboard data</div>';
+    if (qualityEl) qualityEl.innerHTML = '<div class="empty-state">Error loading quality data</div>';
+    if (snapshotEl) snapshotEl.innerHTML = '<div class="empty-state">Error loading snapshot</div>';
     console.error(e);
   }
+}
+
+function renderAttentionRow(row) {
+  const action = row.issue ? `openProductIssueFilter('${row.issue}')` : row.action;
+  const countClass = row.count > 0 ? 'attention-count warn' : 'attention-count';
+  return `<div class="attention-item">
+    <div class="attention-icon">${escapeHtml(row.icon)}</div>
+    <div>
+      <div class="attention-title">${escapeHtml(row.title)}</div>
+      <div class="attention-sub">${escapeHtml(row.sub)}</div>
+    </div>
+    <button class="attention-count ${row.count > 0 ? 'warn' : ''}" onclick="${action}">${row.count}</button>
+  </div>`;
+}
+
+function renderQualityRow(label, value) {
+  const pct = Math.max(0, Math.min(100, Number(value || 0)));
+  return `<div class="quality-row">
+    <div class="quality-label">${escapeHtml(label)}</div>
+    <div class="quality-value">${pct}%</div>
+    <div class="quality-meter"><div class="quality-fill" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function openProductIssueFilter(issue) {
+  productIssueFilter = issue;
+  selectedCategoryId = 'all';
+  showPage('products');
+  setTimeout(() => {
+    const searchInput = document.getElementById('product-search');
+    if (searchInput) searchInput.value = '';
+    renderCategoryFilter();
+    filterProducts();
+  }, 0);
+}
+
+function clearProductIssueFilter() {
+  productIssueFilter = null;
+  filterProducts();
+}
+
+function updateProductIssueBanner(count) {
+  const banner = document.getElementById('issue-filter-banner');
+  if (!banner) return;
+  if (!productIssueFilter) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+  const label = PRODUCT_ISSUE_LABELS[productIssueFilter] || 'Filtered products';
+  banner.style.display = 'flex';
+  banner.innerHTML = `<span>${escapeHtml(label)} — ${count} found</span><button type="button" onclick="clearProductIssueFilter()">Clear filter</button>`;
 }
 
 // ── PRODUCTS ──
@@ -1894,6 +2323,7 @@ function renderCategoryFilter() {
 
 function setCategoryFilter(id) {
   selectedCategoryId = id;
+  productIssueFilter = null;
   document.querySelectorAll('#product-cat-sidebar .side-option').forEach(d => {
     d.classList.toggle('active', String(d.dataset.catId) === String(id));
   });
@@ -1916,6 +2346,10 @@ function filterProducts() {
     );
   }
 
+  if (productIssueFilter) {
+    filtered = filtered.filter(p => matchesProductIssue(p, productIssueFilter));
+  }
+
   if (sortField) {
     filtered = [...filtered].sort((a, b) => {
       if (sortField === 'name') return String(a.name || '').localeCompare(String(b.name || '')) * sortDir;
@@ -1925,6 +2359,7 @@ function filterProducts() {
     });
   }
 
+  updateProductIssueBanner(filtered.length);
   renderProducts(filtered);
 }
 
