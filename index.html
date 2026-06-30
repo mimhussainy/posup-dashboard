@@ -438,6 +438,34 @@
     border-radius: 12px;
   }
 
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .logout-btn {
+    min-height: 38px;
+    padding: 8px 13px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.16s ease;
+    white-space: nowrap;
+  }
+
+  .logout-btn:hover {
+    color: var(--red);
+    border-color: rgba(239, 68, 68, 0.28);
+    background: rgba(239, 68, 68, 0.06);
+  }
+
   .page {
     display: none;
     max-width: 1320px;
@@ -939,6 +967,13 @@
     min-width: 280px;
   }
 
+  #page-products .search-wrap {
+    width: 360px;
+    min-width: 360px;
+    max-width: 360px;
+    flex: 0 0 360px;
+  }
+
   .search-wrap::before {
     content: '⌕';
     position: absolute;
@@ -962,7 +997,7 @@
 
   .products-shell {
     display: grid;
-    grid-template-columns: 292px minmax(0, 1fr);
+    grid-template-columns: 360px minmax(0, 1fr);
     gap: 18px;
     align-items: flex-start;
   }
@@ -1009,12 +1044,31 @@
     transition: background 0.16s ease;
   }
 
+  .side-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .side-option-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .side-option-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .side-option:hover { background: var(--surface-2); }
   .side-option.active { background: var(--accent-soft); }
 
   .side-option-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 10px;
     align-items: center;
   }
@@ -1023,7 +1077,7 @@
     min-width: 0;
     color: var(--text);
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 750;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1060,6 +1114,7 @@
 
   table {
     width: 100%;
+    min-width: 860px;
     border-collapse: collapse;
     font-size: 13px;
   }
@@ -1077,6 +1132,21 @@
     letter-spacing: 0.08em;
     border-bottom: 1px solid var(--border);
     background: #f8fafc;
+    white-space: nowrap;
+  }
+
+  .sortable-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .sort-icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
   }
 
   td {
@@ -1301,6 +1371,29 @@
 
   .toggle input:checked + .toggle-slider { background: var(--accent); }
   .toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
+
+  .category-toggle {
+    width: 36px;
+    height: 20px;
+  }
+
+  .category-toggle .toggle-slider::after {
+    width: 14px;
+    height: 14px;
+  }
+
+  .category-toggle input:checked + .toggle-slider::after {
+    transform: translateX(16px);
+  }
+
+  .category-toggle input:disabled + .toggle-slider {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .category-toggle.is-mixed .toggle-slider {
+    background: linear-gradient(90deg, var(--accent) 50%, #cbd5e1 50%);
+  }
 
   /* ─────────────────────────────────────────────
      ADDONS
@@ -1588,7 +1681,8 @@
   .import-error,
   .restaurant-name,
   .modal-close,
-  .toast {
+  .toast,
+  .logout-btn {
     font-weight: 600;
   }
 
@@ -1622,7 +1716,8 @@
       padding: 14px 18px;
     }
     .topbar-left { justify-content: space-between; gap: 12px; }
-    .restaurant-selector { justify-content: space-between; }
+    .topbar-right { justify-content: space-between; width: 100%; }
+    .restaurant-selector { justify-content: space-between; flex: 1; }
     .restaurant-selector select { width: min(260px, 62vw); }
     .page { padding: 22px 18px; }
     .hero-panel { grid-template-columns: 1fr; }
@@ -1631,6 +1726,7 @@
     .overview-two-grid { grid-template-columns: 1fr; }
     .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .products-shell { grid-template-columns: 1fr; }
+    #page-products .search-wrap { width: 100%; min-width: 0; max-width: none; flex: 1 1 100%; }
     .product-cat-sidebar { position: static; }
     .import-layout { grid-template-columns: 1fr; }
   }
@@ -1642,6 +1738,10 @@
     .topbar-left { flex-direction: column; align-items: stretch; }
     .topbar-logo { justify-content: center; }
     .nav-tabs { justify-content: flex-start; }
+    .topbar-right { flex-direction: column; align-items: stretch; }
+    .restaurant-selector { width: 100%; }
+    .restaurant-selector select { flex: 1; width: auto; }
+    .logout-btn { width: 100%; }
     .page-header { flex-direction: column; align-items: flex-start; }
     .stats-row { grid-template-columns: 1fr; }
     .attention-list { grid-template-columns: 1fr; }
@@ -1716,11 +1816,14 @@
         <button class="nav-tab" data-page="import" onclick="showPage('import', this)">Import</button>
       </div>
     </div>
-    <div class="restaurant-selector">
-      <span>Restaurant</span>
-      <select id="restaurant-select" onchange="onRestaurantChange()">
-        <option value="">Loading...</option>
-      </select>
+    <div class="topbar-right">
+      <div class="restaurant-selector">
+        <span>Restaurant</span>
+        <select id="restaurant-select" onchange="onRestaurantChange()">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <button class="logout-btn" type="button" onclick="logoutDashboard()">Logout</button>
     </div>
   </div>
 
@@ -1832,11 +1935,11 @@
           <table>
             <thead>
               <tr>
-                <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;min-width:340px;">Product <span id="sort-name">↕</span></th>
-                <th>Type</th>
-                <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;">Price <span id="sort-price">↕</span></th>
-                <th onclick="sortProducts('active')" style="cursor:pointer;user-select:none;">Active <span id="sort-active">↕</span></th>
-                <th>Actions</th>
+                <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;min-width:340px;"><span class="sortable-head">Product <span class="sort-icon" id="sort-name">↕</span></span></th>
+                <th style="min-width:90px;">Type</th>
+                <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;min-width:120px;"><span class="sortable-head">Price <span class="sort-icon" id="sort-price">↕</span></span></th>
+                <th onclick="sortProducts('active')" style="cursor:pointer;user-select:none;min-width:120px;"><span class="sortable-head">Active <span class="sort-icon" id="sort-active">↕</span></span></th>
+                <th style="min-width:110px;">Actions</th>
               </tr>
             </thead>
             <tbody id="products-table"></tbody>
@@ -2074,6 +2177,17 @@ function checkAuth() {
     }
   }
   if (sessionStorage.getItem('posup_auth')) { showApp(); return; }
+}
+
+function logoutDashboard() {
+  localStorage.removeItem('posup_auth');
+  sessionStorage.removeItem('posup_auth');
+  sessionStorage.removeItem('posup_page');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+  setTimeout(() => document.getElementById('login-password').focus(), 0);
 }
 
 checkAuth();
@@ -2356,15 +2470,26 @@ async function loadProducts() {
 }
 
 function renderCategoryFilter() {
-  const items = [{ id: 'all', name: 'All Products', count: allProducts.length, tags: [] }]
+  const items = [{ id: 'all', name: 'All Products', count: allProducts.length, tags: [], isAll: true }]
     .concat(allCategories.map(c => {
-      const count = allProducts.filter(p => productInCategory(p, c.id)).length;
-      const hasVariables = allProducts.some(p => productInCategory(p, c.id) && p.variations && p.variations.length > 0);
+      const productsInCat = allProducts.filter(p => productInCategory(p, c.id));
+      const count = productsInCat.length;
+      const activeCount = productsInCat.filter(p => p.active === true).length;
+      const hasVariables = productsInCat.some(p => p.variations && p.variations.length > 0);
       const addonNames = allAddons.filter(a => (a.assigned_category_ids || []).map(String).includes(String(c.id))).map(a => a.name);
       const tags = [];
       if (hasVariables) tags.push('⚡ Variable');
       addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
-      return { id: c.id, name: c.name, count, tags };
+      return {
+        id: c.id,
+        name: c.name,
+        count,
+        activeCount,
+        allActive: count > 0 && activeCount === count,
+        mixed: activeCount > 0 && activeCount < count,
+        tags,
+        isAll: false
+      };
     }));
 
   const sidebar = document.getElementById('product-cat-sidebar');
@@ -2376,22 +2501,43 @@ function renderCategoryFilter() {
   `;
 
   items.forEach(item => {
-    const div = document.createElement('button');
-    div.type = 'button';
+    const div = document.createElement('div');
     div.className = 'side-option' + (String(item.id) === String(selectedCategoryId) ? ' active' : '');
     div.dataset.catId = item.id;
+    div.setAttribute('role', 'button');
+    div.setAttribute('tabindex', '0');
+
+    const toggleHtml = item.isAll ? '' : `
+      <label class="toggle category-toggle${item.mixed ? ' is-mixed' : ''}" title="Enable or disable this entire category" onclick="event.stopPropagation()">
+        <input type="checkbox" ${item.allActive ? 'checked' : ''} ${item.count === 0 ? 'disabled' : ''} onchange="toggleCategory('${escapeAttr(item.id)}', this.checked, this)">
+        <span class="toggle-slider"></span>
+      </label>
+    `;
+
     div.innerHTML = `
-      <div class="side-option-top">
-        <span class="side-option-name">${escapeHtml(item.name)}</span>
-        <span class="side-count">${item.count}</span>
+      <div class="side-option-row">
+        <div class="side-option-main">
+          <div class="side-option-top">
+            <span class="side-option-name">${escapeHtml(item.name)}</span>
+          </div>
+          ${item.tags.length > 0 ? `<div class="side-tags">${escapeHtml(item.tags.join(' · '))}</div>` : ''}
+        </div>
+        <div class="side-option-controls">
+          <span class="side-count">${item.count}</span>
+          ${toggleHtml}
+        </div>
       </div>
-      ${item.tags.length > 0 ? `<div class="side-tags">${escapeHtml(item.tags.join(' · '))}</div>` : ''}
     `;
     div.addEventListener('click', function() { setCategoryFilter(item.id); });
+    div.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setCategoryFilter(item.id);
+      }
+    });
     sidebar.appendChild(div);
   });
 }
-
 function setCategoryFilter(id) {
   selectedCategoryId = id;
   productIssueFilter = null;
@@ -2399,6 +2545,52 @@ function setCategoryFilter(id) {
     d.classList.toggle('active', String(d.dataset.catId) === String(id));
   });
   filterProducts();
+}
+
+async function toggleCategory(categoryId, active, inputEl) {
+  const productsInCategory = allProducts.filter(p => productInCategory(p, categoryId));
+  if (productsInCategory.length === 0) return;
+
+  const previousState = inputEl ? !active : null;
+  const category = allCategories.find(c => String(c.id) === String(categoryId));
+  const categoryName = category ? category.name : 'category';
+
+  if (inputEl) {
+    inputEl.disabled = true;
+    const label = inputEl.closest('.category-toggle');
+    if (label) label.classList.remove('is-mixed');
+  }
+
+  try {
+    const updates = productsInCategory.map(product =>
+      fetch(`${BACKEND}/posup/product/${product.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active })
+      }).then(res => res.json())
+    );
+
+    const results = await Promise.all(updates);
+    const failed = results.filter(result => !result || !result.success).length;
+
+    if (failed > 0) {
+      throw new Error(`${failed} products failed to update`);
+    }
+
+    productsInCategory.forEach(product => { product.active = active; });
+    const statActive = document.getElementById('stat-active');
+    if (statActive) statActive.textContent = allProducts.filter(p => p.active).length;
+
+    renderCategoryFilter();
+    filterProducts();
+    showToast(active ? `✓ ${categoryName} enabled` : `✓ ${categoryName} disabled`, 'success');
+  } catch(e) {
+    if (inputEl) {
+      inputEl.checked = previousState;
+      inputEl.disabled = false;
+    }
+    showToast('Failed to update category', 'error');
+  }
 }
 
 function filterProducts() {
