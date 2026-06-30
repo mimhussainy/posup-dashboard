@@ -812,7 +812,7 @@
     display: grid;
     gap: 16px;
     width: 100%;
-    max-width: 520px;
+    max-width: none;
   }
 
   .quality-row {
@@ -855,7 +855,7 @@
     display: grid;
     gap: 0;
     width: 100%;
-    max-width: 520px;
+    max-width: none;
   }
 
   .snapshot-row {
@@ -1390,16 +1390,35 @@
   }
 
   .restaurant-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 13px 0;
+    padding: 14px 0;
     border-bottom: 1px solid var(--border);
   }
   .restaurant-row:last-child { border-bottom: none; }
-  .restaurant-name { font-weight: 900; font-size: 13px; }
+  .restaurant-name { font-weight: 700; font-size: 13px; }
   .restaurant-code { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .restaurant-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 450;
+  }
+  .restaurant-date {
+    color: var(--text-soft);
+    font-weight: 550;
+  }
+  .restaurant-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
 
   /* ─────────────────────────────────────────────
      MODAL / TOAST / STATES
@@ -1636,6 +1655,17 @@
     .form-row-2 { grid-template-columns: 1fr; }
     .page-title { font-size: 30px; }
   }
+
+  @media (max-width: 640px) {
+    .restaurant-row {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    .restaurant-status {
+      justify-content: flex-start;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -2862,6 +2892,7 @@ async function triggerImport() {
     const data = await res.json();
 
     if (data.success) {
+      localStorage.setItem(`posup_last_import_${code}`, new Date().toISOString());
       document.getElementById('import-result').style.display = 'block';
       document.getElementById('import-result').textContent =
         `✓ Import successful! ${data.imported.categories} categories, ${data.imported.products} products, ${data.imported.addons} addon groups imported for "${code}".`;
@@ -2890,15 +2921,22 @@ async function loadRestaurantsList() {
       container.innerHTML = '<div class="empty-state">No restaurants imported yet</div>';
       return;
     }
+
     container.innerHTML = data.restaurants.map(r => `
-      <div class="restaurant-row">
+      <div class="restaurant-row" data-restaurant-code="${escapeAttr(r.code)}">
         <div>
           <div class="restaurant-name">${escapeHtml(r.name)}</div>
           <div class="restaurant-code">${escapeHtml(r.code)}</div>
+          <div class="restaurant-meta">
+            <span>Last imported:</span>
+            <span class="restaurant-date" data-last-imported-for="${escapeAttr(r.code)}">Checking...</span>
+          </div>
         </div>
-        <span class="badge badge-active">Imported</span>
+        <div class="restaurant-status"><span class="badge badge-active">Imported</span></div>
       </div>
     `).join('');
+
+    updateRestaurantImportDates(data.restaurants);
 
     const sel = document.getElementById('restaurant-select');
     const previousRestaurant = currentRestaurant;
@@ -2913,6 +2951,66 @@ async function loadRestaurantsList() {
   } catch(e) {
     container.innerHTML = '<div class="empty-state">Error loading restaurants</div>';
   }
+}
+
+async function updateRestaurantImportDates(restaurants) {
+  await Promise.all(restaurants.map(async r => {
+    const dateEl = document.querySelector(`[data-last-imported-for="${cssEscape(r.code)}"]`);
+    if (!dateEl) return;
+
+    let rawDate = getImportDateFromRestaurant(r);
+
+    if (!rawDate) {
+      try {
+        const res = await fetch(`${BACKEND}/posup/products/${r.code}`);
+        const data = await res.json();
+        rawDate = getImportDateFromRestaurant(data.restaurant || {}) || data.last_imported || data.last_imported_at || data.imported_at || data.updated_at;
+      } catch(e) {
+        rawDate = null;
+      }
+    }
+
+    if (!rawDate) {
+      rawDate = localStorage.getItem(`posup_last_import_${r.code}`);
+    }
+
+    dateEl.textContent = formatImportDate(rawDate);
+  }));
+}
+
+function getImportDateFromRestaurant(r) {
+  if (!r) return null;
+  return r.last_imported_at
+    || r.last_imported
+    || r.lastImportedAt
+    || r.lastImported
+    || r.last_import
+    || r.imported_at
+    || r.importedAt
+    || r.menu_imported_at
+    || r.products_imported_at
+    || r.synced_at
+    || r.last_sync_at
+    || r.updated_at
+    || null;
+}
+
+function formatImportDate(value) {
+  if (!value) return 'Not saved by backend yet';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function cssEscape(value) {
+  if (window.CSS && CSS.escape) return CSS.escape(String(value));
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
 }
 
 // ── MODALS ──
