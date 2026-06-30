@@ -635,11 +635,43 @@
     font-weight: 900;
   }
 
-  .overview-main-grid {
+  .overview-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
     gap: 16px;
     align-items: start;
+  }
+
+  .overview-two-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .overview-card {
+    margin-bottom: 0;
+  }
+
+  .overview-attention-card {
+    padding: 18px;
+  }
+
+  .overview-quality-card,
+  .overview-snapshot-card,
+  .overview-actions-card {
+    padding: 18px 20px;
+  }
+
+  .overview-quality-card,
+  .overview-snapshot-card {
+    min-height: 235px;
+  }
+
+  .overview-quality-card .card-title,
+  .overview-snapshot-card .card-title,
+  .overview-attention-card .card-title,
+  .overview-actions-card .card-title {
+    margin-bottom: 14px;
   }
 
   .overview-stack {
@@ -703,7 +735,13 @@
 
   .attention-list {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    width: 100%;
+  }
+
+  .attention-list .attention-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .attention-item {
@@ -772,7 +810,9 @@
 
   .quality-list {
     display: grid;
-    gap: 14px;
+    gap: 16px;
+    width: 100%;
+    max-width: 520px;
   }
 
   .quality-row {
@@ -814,6 +854,8 @@
   .snapshot-list {
     display: grid;
     gap: 0;
+    width: 100%;
+    max-width: 520px;
   }
 
   .snapshot-row {
@@ -1567,7 +1609,7 @@
     .hero-panel { grid-template-columns: 1fr; }
     .hero-mini { justify-content: flex-start; }
     .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .overview-main-grid { grid-template-columns: 1fr; }
+    .overview-two-grid { grid-template-columns: 1fr; }
     .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .products-shell { grid-template-columns: 1fr; }
     .product-cat-sidebar { position: static; }
@@ -1583,6 +1625,7 @@
     .nav-tabs { justify-content: flex-start; }
     .page-header { flex-direction: column; align-items: flex-start; }
     .stats-row { grid-template-columns: 1fr; }
+    .attention-list { grid-template-columns: 1fr; }
     .quick-actions-grid { grid-template-columns: 1fr; }
     .attention-item { grid-template-columns: 34px minmax(0, 1fr); }
     .attention-item .attention-count { grid-column: 1 / -1; justify-self: start; }
@@ -1681,49 +1724,47 @@
       <div class="stat-card"><div class="stat-icon">□</div><div class="stat-value" id="stat-missing-images">—</div><div class="stat-label">Missing Images</div></div>
     </div>
 
-    <div class="overview-main-grid">
-      <div class="overview-stack">
-        <div class="card">
-          <div class="card-title">Needs attention</div>
-          <div id="overview-attention" class="loading"><div class="spinner"></div> Loading...</div>
+    <div class="overview-layout">
+      <div class="card overview-card overview-attention-card">
+        <div class="card-title">Needs attention</div>
+        <div id="overview-attention"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+      </div>
+
+      <div class="overview-two-grid">
+        <div class="card overview-card overview-quality-card">
+          <div class="card-title">Menu quality</div>
+          <div id="overview-quality"><div class="loading"><div class="spinner"></div> Loading...</div></div>
         </div>
 
-        <div class="card">
-          <div class="card-title">Quick actions</div>
-          <div class="quick-actions-grid">
-            <button class="quick-action" onclick="showPage('products')">
-              <span class="quick-action-icon">P</span>
-              <span class="quick-action-title">Open Products</span>
-              <span class="quick-action-sub">Edit names, prices, visibility, and product images.</span>
-            </button>
-            <button class="quick-action" onclick="showPage('import')">
-              <span class="quick-action-icon">↓</span>
-              <span class="quick-action-title">Import Products</span>
-              <span class="quick-action-sub">Sync the restaurant menu from WordPress.</span>
-            </button>
-            <button class="quick-action" onclick="showPage('addons')">
-              <span class="quick-action-icon">+</span>
-              <span class="quick-action-title">Manage Addons</span>
-              <span class="quick-action-sub">Review imported addon groups and assignments.</span>
-            </button>
-            <button class="quick-action" onclick="loadOverview()">
-              <span class="quick-action-icon">↻</span>
-              <span class="quick-action-title">Refresh Data</span>
-              <span class="quick-action-sub">Reload the latest saved menu data.</span>
-            </button>
-          </div>
+        <div class="card overview-card overview-snapshot-card">
+          <div class="card-title">Data snapshot</div>
+          <div id="overview-snapshot"><div class="loading"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
 
-      <div class="overview-stack">
-        <div class="card">
-          <div class="card-title">Menu quality</div>
-          <div id="overview-quality" class="loading"><div class="spinner"></div> Loading...</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Data snapshot</div>
-          <div id="overview-snapshot" class="loading"><div class="spinner"></div> Loading...</div>
+      <div class="card overview-card overview-actions-card">
+        <div class="card-title">Quick actions</div>
+        <div class="quick-actions-grid">
+          <button class="quick-action" onclick="showPage('products')">
+            <span class="quick-action-icon">P</span>
+            <span class="quick-action-title">Open Products</span>
+            <span class="quick-action-sub">Edit names, prices, visibility, and product images.</span>
+          </button>
+          <button class="quick-action" onclick="showPage('import')">
+            <span class="quick-action-icon">↓</span>
+            <span class="quick-action-title">Import Products</span>
+            <span class="quick-action-sub">Sync the restaurant menu from WordPress.</span>
+          </button>
+          <button class="quick-action" onclick="showPage('addons')">
+            <span class="quick-action-icon">+</span>
+            <span class="quick-action-title">Manage Addons</span>
+            <span class="quick-action-sub">Review imported addon groups and assignments.</span>
+          </button>
+          <button class="quick-action" onclick="loadOverview()">
+            <span class="quick-action-icon">↻</span>
+            <span class="quick-action-title">Refresh Data</span>
+            <span class="quick-action-sub">Reload the latest saved menu data.</span>
+          </button>
         </div>
       </div>
     </div>
