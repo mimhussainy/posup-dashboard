@@ -2556,8 +2556,8 @@ function renderCategoryFilter() {
     `;
 
     const alcoholToggleHtml = item.isAll ? '' : `
-      <span class="tax-toggle-wrap" title="Mark every product in this category as alcohol / MWST 8.1%" onclick="event.stopPropagation()">
-        MWST 8.1%
+      <span class="tax-toggle-wrap" title="Mark every product in this category as alcohol" onclick="event.stopPropagation()">
+        Alcohol
         <label class="toggle category-toggle${item.mixedAlcohol ? ' is-mixed' : ''}">
           <input type="checkbox" ${item.allAlcohol ? 'checked' : ''} ${item.count === 0 ? 'disabled' : ''} onchange="toggleCategoryAlcohol('${escapeAttr(item.id)}', this.checked, this)">
           <span class="toggle-slider"></span>
