@@ -1391,8 +1391,39 @@
     cursor: not-allowed;
   }
 
-  .category-toggle.is-mixed .toggle-slider {
+    .category-toggle.is-mixed .toggle-slider {
     background: linear-gradient(90deg, var(--accent) 50%, #cbd5e1 50%);
+  }
+
+  .tax-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--yellow-soft);
+    color: var(--yellow);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .tax-toggle-wrap .toggle {
+    width: 34px;
+    height: 20px;
+  }
+
+  .tax-toggle-wrap .toggle-slider::after {
+    width: 14px;
+    height: 14px;
+  }
+
+  .tax-toggle-wrap .toggle input:checked + .toggle-slider::after {
+    transform: translateX(14px);
+  }
+
+  .tax-toggle-wrap .toggle input:checked + .toggle-slider {
+    background: var(--yellow);
   }
 
   /* ─────────────────────────────────────────────
@@ -2480,18 +2511,23 @@ function renderCategoryFilter() {
       const productsInCat = allProducts.filter(p => productInCategory(p, c.id));
       const count = productsInCat.length;
       const activeCount = productsInCat.filter(p => p.active === true).length;
+      const alcoholCount = productsInCat.filter(p => p.is_alcohol === true).length;
       const hasVariables = productsInCat.some(p => p.variations && p.variations.length > 0);
       const addonNames = allAddons.filter(a => (a.assigned_category_ids || []).map(String).includes(String(c.id))).map(a => a.name);
       const tags = [];
       if (hasVariables) tags.push('⚡ Variable');
+      if (alcoholCount > 0) tags.push(`🍺 Alcohol ${alcoholCount}/${count}`);
       addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
       return {
         id: c.id,
         name: c.name,
         count,
         activeCount,
+        alcoholCount,
         allActive: count > 0 && activeCount === count,
         mixed: activeCount > 0 && activeCount < count,
+        allAlcohol: count > 0 && alcoholCount === count,
+        mixedAlcohol: alcoholCount > 0 && alcoholCount < count,
         tags,
         isAll: false
       };
@@ -2519,6 +2555,16 @@ function renderCategoryFilter() {
       </label>
     `;
 
+    const alcoholToggleHtml = item.isAll ? '' : `
+      <span class="tax-toggle-wrap" title="Mark every product in this category as alcohol / MWST 8.1%" onclick="event.stopPropagation()">
+        MWST 8.1%
+        <label class="toggle category-toggle${item.mixedAlcohol ? ' is-mixed' : ''}">
+          <input type="checkbox" ${item.allAlcohol ? 'checked' : ''} ${item.count === 0 ? 'disabled' : ''} onchange="toggleCategoryAlcohol('${escapeAttr(item.id)}', this.checked, this)">
+          <span class="toggle-slider"></span>
+        </label>
+      </span>
+    `;
+
     div.innerHTML = `
       <div class="side-option-row">
         <div class="side-option-main">
@@ -2529,6 +2575,7 @@ function renderCategoryFilter() {
         </div>
         <div class="side-option-controls">
           <span class="side-count">${item.count}</span>
+          ${alcoholToggleHtml}
           ${toggleHtml}
         </div>
       </div>
@@ -2594,7 +2641,50 @@ async function toggleCategory(categoryId, active, inputEl) {
       inputEl.checked = previousState;
       inputEl.disabled = false;
     }
-    showToast('Failed to update category', 'error');
+async function toggleCategoryAlcohol(categoryId, isAlcohol, inputEl) {
+  const productsInCategory = allProducts.filter(p => productInCategory(p, categoryId));
+  if (productsInCategory.length === 0) return;
+
+  const previousState = inputEl ? !isAlcohol : null;
+  const category = allCategories.find(c => String(c.id) === String(categoryId));
+  const categoryName = category ? category.name : 'category';
+
+  if (inputEl) {
+    inputEl.disabled = true;
+    const label = inputEl.closest('.category-toggle');
+    if (label) label.classList.remove('is-mixed');
+  }
+
+  try {
+    const updates = productsInCategory.map(product =>
+      fetch(`${BACKEND}/posup/product/${product.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_alcohol: isAlcohol })
+      }).then(res => res.json())
+    );
+
+    const results = await Promise.all(updates);
+    const failed = results.filter(result => !result || !result.success).length;
+
+    if (failed > 0) {
+      throw new Error(`${failed} products failed to update`);
+    }
+
+    productsInCategory.forEach(product => { product.is_alcohol = isAlcohol; });
+
+    renderCategoryFilter();
+    filterProducts();
+    showToast(
+      isAlcohol ? `✓ ${categoryName} marked as alcohol` : `✓ ${categoryName} unmarked as alcohol`,
+      'success'
+    );
+  } catch(e) {
+    if (inputEl) {
+      inputEl.checked = previousState;
+      inputEl.disabled = false;
+    }
+    showToast('Failed to update alcohol setting', 'error');
   }
 }
 
