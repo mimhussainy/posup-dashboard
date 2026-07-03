@@ -2035,10 +2035,15 @@
         </select>
       </div>
     </div>
-    <div class="form-row">
+        <div class="form-row">
       <div class="field-label">Image URL</div>
       <input type="text" id="edit-image-url">
     </div>
+
+    <label class="remember-row" style="margin-top:0;margin-bottom:16px;">
+      <input type="checkbox" id="edit-is-alcohol" style="width:auto">
+      Alcohol product / MWST 8.1%
+    </label>
     <div class="form-row" id="edit-category-row" style="display:none">
       <div class="field-label">Category</div>
       <select id="edit-category" onchange="toggleNewCategory(this)"></select>
@@ -2857,6 +2862,7 @@ function openEditProduct(productId) {
   document.getElementById('edit-price').value = p.price || 0;
   document.getElementById('edit-active').value = String(p.active === true);
   document.getElementById('edit-image-url').value = p.image_url || '';
+  document.getElementById('edit-is-alcohol').checked = p.is_alcohol === true;
   document.getElementById('edit-category-row').style.display = 'none';
   openModal('product-modal');
 }
@@ -2869,6 +2875,7 @@ function openAddProduct() {
   document.getElementById('edit-price').value = '';
   document.getElementById('edit-active').value = 'true';
   document.getElementById('edit-image-url').value = '';
+  document.getElementById('edit-is-alcohol').checked = false;
 
   const catRow = document.getElementById('edit-category-row');
   const catSel = document.getElementById('edit-category');
@@ -2887,6 +2894,7 @@ async function saveProduct() {
   const price = parseFloat(document.getElementById('edit-price').value);
   const active = document.getElementById('edit-active').value === 'true';
   const image_url = document.getElementById('edit-image-url').value.trim();
+  const is_alcohol = document.getElementById('edit-is-alcohol').checked === true;
 
   if (!name) { showToast('Name is required', 'error'); return; }
   if (Number.isNaN(price)) { showToast('Price is required', 'error'); return; }
@@ -2920,7 +2928,16 @@ async function saveProduct() {
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, price, active, image_url, restaurant_code: currentRestaurant, category_id: categoryId })
+      body: JSON.stringify({
+        name,
+        description,
+        price,
+        active,
+        image_url,
+        is_alcohol,
+        restaurant_code: currentRestaurant,
+        category_id: categoryId
+      })
     });
     const data = await res.json();
 
