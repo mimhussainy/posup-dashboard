@@ -2636,12 +2636,17 @@ async function toggleCategory(categoryId, active, inputEl) {
     renderCategoryFilter();
     filterProducts();
     showToast(active ? `✓ ${categoryName} enabled` : `✓ ${categoryName} disabled`, 'success');
-  } catch(e) {
+      } catch(e) {
     if (inputEl) {
       inputEl.checked = previousState;
       inputEl.disabled = false;
     }
+    showToast('Failed to update category', 'error');
+  }
+}
+
 async function toggleCategoryAlcohol(categoryId, isAlcohol, inputEl) {
+    async function toggleCategoryAlcohol(categoryId, isAlcohol, inputEl) {
   const productsInCategory = allProducts.filter(p => productInCategory(p, categoryId));
   if (productsInCategory.length === 0) return;
 
