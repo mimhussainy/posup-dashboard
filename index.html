@@ -1465,8 +1465,41 @@
     transform: translateX(14px);
   }
 
-  .tax-toggle-wrap .toggle input:checked + .toggle-slider {
+    .tax-toggle-wrap .toggle input:checked + .toggle-slider {
     background: var(--yellow);
+  }
+
+  #page-products .products-table {
+    table-layout: fixed;
+    min-width: 760px;
+  }
+
+  #page-products .products-table th:nth-child(5),
+  #page-products .products-table td:nth-child(5) {
+    width: 74px;
+    padding-left: 8px;
+    padding-right: 4px;
+  }
+
+  #page-products .products-table th:nth-child(6),
+  #page-products .products-table td:nth-child(6) {
+    width: 58px;
+    padding-left: 4px;
+    padding-right: 8px;
+  }
+
+  #page-products .products-table td:nth-child(5),
+  #page-products .products-table td:nth-child(6) {
+    text-align: left;
+  }
+
+  .delete-product-btn {
+    min-height: 32px !important;
+    width: 32px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
   }
 
   /* ─────────────────────────────────────────────
@@ -2006,15 +2039,23 @@
       <div id="product-cat-sidebar" class="product-cat-sidebar"></div>
       <div class="card table-card">
         <div class="table-wrap">
-          <table>
+          <table class="products-table">
+            <colgroup>
+              <col style="width:56px;">
+              <col>
+              <col style="width:90px;">
+              <col style="width:132px;">
+              <col style="width:74px;">
+              <col style="width:58px;">
+            </colgroup>
             <thead>
               <tr>
-                <th style="min-width:56px;">Order</th>
-                <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;min-width:340px;"><span class="sortable-head">Product <span class="sort-icon" id="sort-name">↕</span></span></th>
-                <th style="min-width:90px;">Type</th>
-                <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;min-width:120px;"><span class="sortable-head">Price <span class="sort-icon" id="sort-price">↕</span></span></th>
-                <th onclick="sortProducts('active')" style="cursor:pointer;user-select:none;min-width:120px;"><span class="sortable-head">Active <span class="sort-icon" id="sort-active">↕</span></span></th>
-                <th style="min-width:110px;">Actions</th>
+                <th>Order</th>
+                <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;"><span class="sortable-head">Product <span class="sort-icon" id="sort-name">↕</span></span></th>
+                <th>Type</th>
+                <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;"><span class="sortable-head">Price <span class="sort-icon" id="sort-price">↕</span></span></th>
+                <th onclick="sortProducts('active')" style="cursor:pointer;user-select:none;"><span class="sortable-head">Active <span class="sort-icon" id="sort-active">↕</span></span></th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="products-table"></tbody>
@@ -2211,7 +2252,7 @@
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
       <button class="btn btn-secondary" onclick="closeModal('delete-confirm-modal')">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmDeleteProduct()">Remove</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteProduct()">Remove</button>
     </div>
   </div>
 </div>
@@ -2235,6 +2276,8 @@ let sortField = null;
 let sortDir = 1;
 let currentFilteredProducts = [];
 let productIssueFilter = null;
+let pendingDeleteProductId = null;
+const DELETE_SKIP_KEY = 'posup_delete_confirm_skip_until';
 
 // ── HELPERS ──
 function escapeHtml(value) {
@@ -2941,8 +2984,8 @@ const description = `<input
           <span class="toggle-slider"></span>
         </label>
       </td>
-      <td>
-        <button class="btn btn-danger" style="min-height:32px;width:32px;padding:0;font-size:14px;" onclick="deleteProductRow('${escapeAttr(p.id)}')" title="Remove product">✕</button>
+        <td>
+        <button type="button" class="btn btn-danger delete-product-btn" onclick="deleteProductRow('${escapeAttr(p.id)}')" title="Remove product">✕</button>
       </td>
     </tr>`;
 }
@@ -3149,7 +3192,97 @@ async function toggleProduct(productId, active) {
   }
 }
 
+function toggleDeleteSkipMinutes(checkbox) {
+  const row = document.getElementById('delete-skip-minutes-row');
+  if (row) row.style.display = checkbox.checked ? 'flex' : 'none';
+}
 
+function deleteProductRow(productId) {
+  const skipUntil = Number(localStorage.getItem(DELETE_SKIP_KEY) || '0');
+
+  if (skipUntil > Date.now()) {
+    removeProduct(productId);
+    return;
+  }
+
+  pendingDeleteProductId = productId;
+
+  const product = allProducts.find(p => String(p.id) === String(productId));
+  const productName = product && product.name ? product.name : 'this product';
+
+  const message = document.getElementById('delete-confirm-message');
+  if (message) {
+    message.innerHTML = `Remove <strong>${escapeHtml(productName)}</strong>? This cannot be undone.`;
+  }
+
+  const checkbox = document.getElementById('delete-skip-checkbox');
+  const minutes = document.getElementById('delete-skip-minutes');
+  const minutesRow = document.getElementById('delete-skip-minutes-row');
+
+  if (checkbox) checkbox.checked = false;
+  if (minutes) minutes.value = '10';
+  if (minutesRow) minutesRow.style.display = 'none';
+
+  openModal('delete-confirm-modal');
+}
+
+async function confirmDeleteProduct() {
+  if (!pendingDeleteProductId) return;
+
+  const productId = pendingDeleteProductId;
+  const checkbox = document.getElementById('delete-skip-checkbox');
+  const minutesInput = document.getElementById('delete-skip-minutes');
+
+  if (checkbox && checkbox.checked) {
+    const minutes = Math.max(1, Number(minutesInput?.value || 10));
+    localStorage.setItem(DELETE_SKIP_KEY, String(Date.now() + minutes * 60 * 1000));
+  }
+
+  await removeProduct(productId);
+}
+
+async function removeProduct(productId) {
+  const btn = document.getElementById('confirm-delete-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+  }
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/product/${productId}`, {
+      method: 'DELETE'
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to remove product');
+    }
+
+    allProducts = allProducts.filter(p => String(p.id) !== String(productId));
+    currentFilteredProducts = currentFilteredProducts.filter(p => String(p.id) !== String(productId));
+
+    if (String(editingProductId) === String(productId)) {
+      editingProductId = null;
+      closeModal('edit-product-modal');
+    }
+
+    pendingDeleteProductId = null;
+
+    closeModal('delete-confirm-modal');
+    renderCategoryFilter();
+    filterProducts();
+    showToast('✓ Product removed', 'success');
+  } catch(e) {
+    showToast(e.message || 'Failed to remove product', 'error');
+  } finally {
+    const refreshedBtn = document.getElementById('confirm-delete-btn');
+    if (refreshedBtn) {
+      refreshedBtn.disabled = false;
+      refreshedBtn.textContent = 'Remove';
+    }
+  }
+}
   
 function openEditProduct(productId) {
   const p = allProducts.find(p => String(p.id) === String(productId));
