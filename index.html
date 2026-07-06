@@ -1333,6 +1333,30 @@
   .price-stepper-btn:first-child { border-bottom: 1px solid var(--border); }
   .price-stepper-btn:hover { background: rgba(109, 56, 255, 0.18); }
 
+  .order-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .order-btn {
+    width: 28px;
+    height: 21px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 9px;
+    color: var(--accent-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .order-btn:hover { background: var(--accent-soft); }
+  .order-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
   /* ─────────────────────────────────────────────
      BADGES / TOGGLES
   ───────────────────────────────────────────── */
@@ -1985,6 +2009,7 @@
           <table>
             <thead>
               <tr>
+                <th style="min-width:56px;">Order</th>
                 <th onclick="sortProducts('name')" style="cursor:pointer;user-select:none;min-width:340px;"><span class="sortable-head">Product <span class="sort-icon" id="sort-name">↕</span></span></th>
                 <th style="min-width:90px;">Type</th>
                 <th onclick="sortProducts('price')" style="cursor:pointer;user-select:none;min-width:120px;"><span class="sortable-head">Price <span class="sort-icon" id="sort-price">↕</span></span></th>
@@ -2185,7 +2210,7 @@ let selectedCategoryId = 'all';
 let editingProductId = null;
 let sortField = null;
 let sortDir = 1;
-let productIssueFilter = null;
+let currentFilteredProducts = [];
 
 // ── HELPERS ──
 function escapeHtml(value) {
@@ -2799,7 +2824,8 @@ function filterProducts() {
     });
   }
 
-  updateProductIssueBanner(filtered.length);
+updateProductIssueBanner(filtered.length);
+  currentFilteredProducts = filtered;
   renderProducts(filtered);
 }
 
@@ -2822,7 +2848,7 @@ const description = `<input
     data-original-description="${escapeAttr(p.description || '')}"
     oninput="markDescriptionChanged(this)"
     onblur="saveDescriptionIfChanged(this)"
-    onkeydown="if(event.key==='Enter'){this.blur();}"
+    onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusNameOfRow(this):focusNextNameFromDescription(this);}if(event.key==='Enter'){this.blur();}"
   >`;
 
   const variations = variationText
@@ -2834,7 +2860,13 @@ const description = `<input
     ? '<span class="override-dot" title="Price manually overridden — protected from WP import"></span>'
     : '<span class="override-spacer"></span>';
 
-  return `<tr>
+  return `<tr data-row-id="${escapeAttr(p.id)}">
+      <td>
+        <div class="order-btns">
+          <button type="button" class="order-btn" onclick="moveProduct('${escapeAttr(p.id)}', 'up')" title="Move up">▲</button>
+          <button type="button" class="order-btn" onclick="moveProduct('${escapeAttr(p.id)}', 'down')" title="Move down">▼</button>
+        </div>
+      </td>
       <td>
         <div class="product-main">
           ${img}
@@ -2847,7 +2879,7 @@ const description = `<input
               class="name-input"
               oninput="markNameChanged(this)"
               onblur="saveNameIfChanged(this)"
-              onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusPrevName(this):focusNextName(this);}if(event.key==='Enter'){this.blur();}"
+              onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusPrevDescription(this):focusDescriptionOfRow(this);}if(event.key==='Enter'){this.blur();}"
             >
             ${description}
             ${variations}
@@ -2885,14 +2917,14 @@ const description = `<input
         </label>
       </td>
       <td>
-        <button class="btn btn-secondary" style="min-height:32px;padding:6px 11px;font-size:12px" onclick="openEditProduct('${escapeAttr(p.id)}')">Edit</button>
+        <button class="btn btn-danger" style="min-height:32px;width:32px;padding:0;font-size:14px;" onclick="deleteProductRow('${escapeAttr(p.id)}')" title="Remove product">✕</button>
       </td>
     </tr>`;
 }
 
 function addRowTrHtml() {
   return `<tr id="add-row-tr">
-    <td colspan="5" style="text-align:center;padding:14px;">
+    <td colspan="6" style="text-align:center;padding:14px;">
       <button class="btn btn-secondary" id="add-row-btn" onclick="addSingleEmptyProduct()">+ Add empty row</button>
     </td>
   </tr>`;
@@ -2900,8 +2932,8 @@ function addRowTrHtml() {
 
 function renderProducts(products) {
   if (products.length === 0) {
-    document.getElementById('products-table').innerHTML =
-      `<tr><td colspan="5"><div class="empty-state">No products found</div></td></tr>${addRowTrHtml()}`;
+document.getElementById('products-table').innerHTML =
+      `<tr><td colspan="6"><div class="empty-state">No products found</div></td></tr>${addRowTrHtml()}`;
     updateSaveAllBtn();
     return;
   }
@@ -3092,6 +3124,30 @@ async function toggleProduct(productId, active) {
   }
 }
 
+async function deleteProductRow(productId) {
+  const p = allProducts.find(p => String(p.id) === String(productId));
+  const label = p && p.name ? p.name : 'this product';
+  if (!confirm(`Remove "${label}"? This cannot be undone.`)) return;
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/product/${productId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      allProducts = allProducts.filter(p => String(p.id) !== String(productId));
+      currentFilteredProducts = currentFilteredProducts.filter(p => String(p.id) !== String(productId));
+      const row = document.querySelector(`tr[data-row-id="${CSS.escape(String(productId))}"]`);
+      if (row) row.remove();
+      renderCategoryFilter();
+      updateSaveAllBtn();
+      showToast('✓ Product removed', 'success');
+    } else {
+      showToast(data.error || 'Failed to remove product', 'error');
+    }
+  } catch (e) {
+    showToast('Error removing product', 'error');
+  }
+}
+  
 function openEditProduct(productId) {
   const p = allProducts.find(p => String(p.id) === String(productId));
   if (!p) return;
@@ -3193,6 +3249,70 @@ async function saveProduct() {
   }
 }
 
+// ── MANUAL REORDER ──
+function swapRows(idA, idB) {
+  const rowA = document.querySelector(`tr[data-row-id="${CSS.escape(String(idA))}"]`);
+  const rowB = document.querySelector(`tr[data-row-id="${CSS.escape(String(idB))}"]`);
+  if (!rowA || !rowB) return;
+
+  const aBeforeB = !!(rowA.compareDocumentPosition(rowB) & Node.DOCUMENT_POSITION_FOLLOWING);
+  if (aBeforeB) {
+    rowB.parentNode.insertBefore(rowB, rowA);
+  } else {
+    rowA.parentNode.insertBefore(rowA, rowB);
+  }
+}
+
+async function moveProduct(productId, direction) {
+  if (sortField) {
+    showToast('Clear column sorting first to reorder manually', 'error');
+    return;
+  }
+
+  const list = currentFilteredProducts;
+  const idx = list.findIndex(p => String(p.id) === String(productId));
+  if (idx === -1) return;
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= list.length) return;
+
+  const a = list[idx];
+  const b = list[swapIdx];
+
+  let aOrder = Number(a.sort_order) || 0;
+  let bOrder = Number(b.sort_order) || 0;
+
+  if (aOrder === bOrder) {
+    if (direction === 'up') aOrder = bOrder - 1;
+    else bOrder = aOrder - 1;
+  } else {
+    [aOrder, bOrder] = [bOrder, aOrder];
+  }
+
+  a.sort_order = aOrder;
+  b.sort_order = bOrder;
+
+  [list[idx], list[swapIdx]] = [list[swapIdx], list[idx]];
+  swapRows(a.id, b.id);
+
+  try {
+    const [resA, resB] = await Promise.all([
+      fetch(`${BACKEND}/posup/product/${a.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort_order: a.sort_order })
+      }).then(r => r.json()),
+      fetch(`${BACKEND}/posup/product/${b.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort_order: b.sort_order })
+      }).then(r => r.json())
+    ]);
+    if (!resA.success || !resB.success) throw new Error('one or both updates failed');
+  } catch (e) {
+    showToast('Failed to save new order', 'error');
+  }
+}
+  
 // ── BULK ADD PRODUCTS ──
 function openBulkAddModal() {
   document.getElementById('bulk-qty').value = 10;
@@ -3752,6 +3872,36 @@ async function saveDescriptionIfChanged(input) {
     input.style.setProperty('color', 'var(--muted)', 'important');
     showToast('Error saving description', 'error');
   }
+}
+
+function focusDescriptionOfRow(nameInput) {
+  const tr = nameInput.closest('tr');
+  const desc = tr ? tr.querySelector('.description-input') : null;
+  if (desc) { desc.focus(); desc.select(); }
+}
+
+function focusPrevDescription(nameInput) {
+  const allNameInputs = Array.from(document.querySelectorAll('.name-input'));
+  const idx = allNameInputs.indexOf(nameInput);
+  if (idx > 0) {
+    const prevRow = allNameInputs[idx - 1].closest('tr');
+    const prevDesc = prevRow ? prevRow.querySelector('.description-input') : null;
+    if (prevDesc) { prevDesc.focus(); prevDesc.select(); }
+  }
+}
+
+function focusNextNameFromDescription(descInput) {
+  let tr = descInput.closest('tr');
+  let next = tr ? tr.nextElementSibling : null;
+  while (next && !next.querySelector('.name-input')) next = next.nextElementSibling;
+  const nameInput = next ? next.querySelector('.name-input') : null;
+  if (nameInput) { nameInput.focus(); nameInput.select(); }
+}
+
+function focusNameOfRow(descInput) {
+  const tr = descInput.closest('tr');
+  const name = tr ? tr.querySelector('.name-input') : null;
+  if (name) { name.focus(); name.select(); }
 }
   
 function focusNextName(input) {
