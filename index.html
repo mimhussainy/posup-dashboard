@@ -1208,6 +1208,25 @@
     line-height: 1.4;
   }
 
+  .description-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: unset !important;
+    color: var(--muted) !important;
+    font-weight: 450 !important;
+    font-size: 11px !important;
+    width: 100% !important;
+    outline: none !important;
+    padding: 2px 0 !important;
+    margin-top: 4px !important;
+    display: block;
+  }
+
+  .description-input:focus { border-bottom-color: var(--accent) !important; }
+  .description-input::placeholder { color: #c7cbd4; }
   .variations-list {
     margin-top: 4px;
     font-size: 11px;
@@ -2784,37 +2803,38 @@ function filterProducts() {
   renderProducts(filtered);
 }
 
-function renderProducts(products) {
-  if (products.length === 0) {
-    document.getElementById('products-table').innerHTML = '<tr><td colspan="5"><div class="empty-state">No products found</div></td></tr>';
-    updateSaveAllBtn();
-    return;
-  }
+function buildProductRow(p) {
+  const imageUrl = p.image_url || '';
+  const img = imageUrl
+    ? `<img class="product-img" src="${escapeAttr(imageUrl)}" onerror="this.replaceWith(createImagePlaceholder())">`
+    : `<div class="product-img-placeholder">🍽</div>`;
 
-  const rows = products.map(p => {
-    const imageUrl = p.image_url || '';
-    const img = imageUrl
-      ? `<img class="product-img" src="${escapeAttr(imageUrl)}" onerror="this.replaceWith(createImagePlaceholder())">`
-      : `<div class="product-img-placeholder">🍽</div>`;
+  const variationText = p.variations?.length > 0
+    ? p.variations.map(v => `${v.name} — CHF ${formatPrice(v.price)}`).join(' | ')
+    : '';
 
-    const variationText = p.variations?.length > 0
-      ? p.variations.map(v => `${v.name} — CHF ${formatPrice(v.price)}`).join(' | ')
-      : '';
+const description = `<input
+    type="text"
+    class="description-input"
+    placeholder="Optional description (e.g. size, quantity range)"
+    value="${escapeAttr(p.description || '')}"
+    data-product-id="${escapeAttr(p.id)}"
+    data-original-description="${escapeAttr(p.description || '')}"
+    oninput="markDescriptionChanged(this)"
+    onblur="saveDescriptionIfChanged(this)"
+    onkeydown="if(event.key==='Enter'){this.blur();}"
+  >`;
 
-    const description = p.description
-      ? `<div class="product-description">${escapeHtml(String(p.description).substring(0, 72))}${String(p.description).length > 72 ? '...' : ''}</div>`
-      : '';
+  const variations = variationText
+    ? `<div class="variations-list">${escapeHtml(variationText)}</div>`
+    : '';
 
-    const variations = variationText
-      ? `<div class="variations-list">${escapeHtml(variationText)}</div>`
-      : '';
+  const typeClass = p.type === 'variable' ? 'badge-variable' : 'badge-simple';
+  const override = p.price_overridden === true
+    ? '<span class="override-dot" title="Price manually overridden — protected from WP import"></span>'
+    : '<span class="override-spacer"></span>';
 
-    const typeClass = p.type === 'variable' ? 'badge-variable' : 'badge-simple';
-    const override = p.price_overridden === true
-      ? '<span class="override-dot" title="Price manually overridden — protected from WP import"></span>'
-      : '<span class="override-spacer"></span>';
-
-    return `<tr>
+  return `<tr>
       <td>
         <div class="product-main">
           ${img}
@@ -2868,10 +2888,77 @@ function renderProducts(products) {
         <button class="btn btn-secondary" style="min-height:32px;padding:6px 11px;font-size:12px" onclick="openEditProduct('${escapeAttr(p.id)}')">Edit</button>
       </td>
     </tr>`;
-  }).join('');
+}
 
-  document.getElementById('products-table').innerHTML = rows;
+function addRowTrHtml() {
+  return `<tr id="add-row-tr">
+    <td colspan="5" style="text-align:center;padding:14px;">
+      <button class="btn btn-secondary" id="add-row-btn" onclick="addSingleEmptyProduct()">+ Add empty row</button>
+    </td>
+  </tr>`;
+}
+
+function renderProducts(products) {
+  if (products.length === 0) {
+    document.getElementById('products-table').innerHTML =
+      `<tr><td colspan="5"><div class="empty-state">No products found</div></td></tr>${addRowTrHtml()}`;
+    updateSaveAllBtn();
+    return;
+  }
+
+  const rows = products.map(p => buildProductRow(p)).join('');
+  document.getElementById('products-table').innerHTML = rows + addRowTrHtml();
   updateSaveAllBtn();
+}
+
+async function addSingleEmptyProduct() {
+  const categoryId = (selectedCategoryId && selectedCategoryId !== 'all') ? selectedCategoryId : null;
+  const btn = document.getElementById('add-row-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/product`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '',
+        description: '',
+        price: 0,
+        active: true,
+        image_url: '',
+        is_alcohol: false,
+        restaurant_code: currentRestaurant,
+        category_id: categoryId
+      })
+    });
+    const data = await res.json();
+
+    if (data.success && data.product) {
+      const newProduct = {
+        ...data.product,
+        category_ids: categoryId ? [categoryId] : [],
+        variations: [],
+      };
+      allProducts.push(newProduct);
+
+      const addRowTr = document.getElementById('add-row-tr');
+      if (addRowTr) {
+        addRowTr.insertAdjacentHTML('beforebegin', buildProductRow(newProduct));
+      }
+
+      renderCategoryFilter();
+
+      const newInput = document.querySelector(`.name-input[data-product-id="${CSS.escape(String(newProduct.id))}"]`);
+      if (newInput) { newInput.focus(); newInput.select(); }
+    } else {
+      showToast(data.error || 'Failed to add row', 'error');
+    }
+  } catch (e) {
+    showToast('Error adding row', 'error');
+  } finally {
+    const refreshedBtn = document.getElementById('add-row-btn');
+    if (refreshedBtn) { refreshedBtn.disabled = false; refreshedBtn.textContent = '+ Add empty row'; }
+  }
 }
 
 function createImagePlaceholder() {
@@ -3386,10 +3473,9 @@ async function triggerCreateRestaurant() {
       document.getElementById('create-admin-pin').value = '';
       await loadRestaurantsList();
 
-      currentRestaurant = code;
-      const sel = document.getElementById('restaurant-select');
+const sel = document.getElementById('restaurant-select');
       if (sel) sel.value = code;
-      sessionStorage.setItem('posup_restaurant', code);
+      onRestaurantChange();
     } else {
       document.getElementById('import-error').style.display = 'block';
       document.getElementById('import-error').textContent = data.error || 'Failed to create restaurant';
@@ -3592,6 +3678,8 @@ function markNameChanged(input) {
   updateSaveAllBtn();
 }
 
+
+  
 async function saveNameIfChanged(input, showMessage = true) {
   const original = input.dataset.originalName;
   if (input.value.trim() === original || input.value.trim() === '') {
@@ -3626,6 +3714,46 @@ async function saveNameIfChanged(input, showMessage = true) {
   updateSaveAllBtn();
 }
 
+function markDescriptionChanged(input) {
+  const original = input.dataset.originalDescription;
+  if (input.value !== original) {
+    input.style.setProperty('color', 'var(--yellow)', 'important');
+  } else {
+    input.style.setProperty('color', 'var(--muted)', 'important');
+  }
+}
+
+async function saveDescriptionIfChanged(input) {
+  const original = input.dataset.originalDescription || '';
+  if (input.value.trim() === original) {
+    input.style.setProperty('color', 'var(--muted)', 'important');
+    return;
+  }
+  try {
+    const res = await fetch(`${BACKEND}/posup/product/${input.dataset.productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: input.value.trim() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.dataset.originalDescription = input.value.trim();
+      input.style.setProperty('color', 'var(--muted)', 'important');
+      const p = allProducts.find(p => String(p.id) === String(input.dataset.productId));
+      if (p) p.description = input.value.trim();
+      showToast('✓ Description saved', 'success');
+    } else {
+      input.value = original;
+      input.style.setProperty('color', 'var(--muted)', 'important');
+      showToast('Failed to save description', 'error');
+    }
+  } catch(e) {
+    input.value = original;
+    input.style.setProperty('color', 'var(--muted)', 'important');
+    showToast('Error saving description', 'error');
+  }
+}
+  
 function focusNextName(input) {
   const inputs = Array.from(document.querySelectorAll('.name-input'));
   const idx = inputs.indexOf(input);
