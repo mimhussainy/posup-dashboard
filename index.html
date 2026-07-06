@@ -2192,6 +2192,29 @@
     </div>
   </div>
 </div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">Remove Product</div>
+      <button class="modal-close" onclick="closeModal('delete-confirm-modal')">✕</button>
+    </div>
+    <div class="page-sub" id="delete-confirm-message" style="margin-bottom:16px;">Remove this product? This cannot be undone.</div>
+    <label class="remember-row" style="margin-bottom:10px;">
+      <input type="checkbox" id="delete-skip-checkbox" style="width:auto" onchange="toggleDeleteSkipMinutes(this)">
+      Don't ask again for
+    </label>
+    <div class="form-row" id="delete-skip-minutes-row" style="display:none;align-items:center;gap:8px;">
+      <input type="number" id="delete-skip-minutes" min="1" value="10" style="max-width:100px;display:inline-block;">
+      <span class="page-sub" style="margin:0;">minutes</span>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('delete-confirm-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteProduct()">Remove</button>
+    </div>
+  </div>
+</div>
   
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -3125,29 +3148,7 @@ async function toggleProduct(productId, active) {
   }
 }
 
-async function deleteProductRow(productId) {
-  const p = allProducts.find(p => String(p.id) === String(productId));
-  const label = p && p.name ? p.name : 'this product';
-  if (!confirm(`Remove "${label}"? This cannot be undone.`)) return;
 
-  try {
-    const res = await fetch(`${BACKEND}/posup/product/${productId}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (data.success) {
-      allProducts = allProducts.filter(p => String(p.id) !== String(productId));
-      currentFilteredProducts = currentFilteredProducts.filter(p => String(p.id) !== String(productId));
-      const row = document.querySelector(`tr[data-row-id="${CSS.escape(String(productId))}"]`);
-      if (row) row.remove();
-      renderCategoryFilter();
-      updateSaveAllBtn();
-      showToast('✓ Product removed', 'success');
-    } else {
-      showToast(data.error || 'Failed to remove product', 'error');
-    }
-  } catch (e) {
-    showToast('Error removing product', 'error');
-  }
-}
   
 function openEditProduct(productId) {
   const p = allProducts.find(p => String(p.id) === String(productId));
