@@ -2012,20 +2012,52 @@
 
     <div class="import-layout">
       <div class="card import-form">
-        <div class="card-title">New import</div>
-        <div class="form-row">
-          <div class="field-label">Restaurant Code</div>
-          <input type="text" id="import-code" placeholder="e.g. eatime">
+        <div class="card-title">New restaurant</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:18px;padding:4px;border:1px solid var(--border);border-radius:14px;background:var(--bg-soft);">
+          <button type="button" class="btn" id="onboard-tab-wp" onclick="setOnboardMode('wp')" style="flex:1;background:linear-gradient(135deg, var(--accent), var(--accent-dark));color:#fff;">I have a WordPress site</button>
+          <button type="button" class="btn btn-secondary" id="onboard-tab-none" onclick="setOnboardMode('none')" style="flex:1;">I don't have a website</button>
         </div>
-        <div class="form-row">
-          <div class="field-label">WordPress Site URL</div>
-          <input type="text" id="import-url" placeholder="https://yoursite.ch">
+
+        <div id="onboard-wp">
+          <div class="form-row">
+            <div class="field-label">Restaurant Code</div>
+            <input type="text" id="import-code" placeholder="e.g. eatime">
+          </div>
+          <div class="form-row">
+            <div class="field-label">WordPress Site URL</div>
+            <input type="text" id="import-url" placeholder="https://yoursite.ch">
+          </div>
+          <div class="form-row">
+            <div class="field-label">POSUP Secret Key</div>
+            <input type="password" id="import-key" placeholder="posup_eatime_2026">
+          </div>
+          <button class="btn btn-primary" id="import-btn" onclick="triggerImport()">Import Products</button>
         </div>
-        <div class="form-row">
-          <div class="field-label">POSUP Secret Key</div>
-          <input type="password" id="import-key" placeholder="posup_eatime_2026">
+
+        <div id="onboard-none" style="display:none;">
+          <div class="form-row">
+            <div class="field-label">Restaurant Code</div>
+            <input type="text" id="create-code" placeholder="e.g. heidis">
+          </div>
+          <div class="form-row">
+            <div class="field-label">Restaurant Name</div>
+            <input type="text" id="create-name" placeholder="e.g. Heidis Grill">
+          </div>
+          <div class="form-row-2">
+            <div>
+              <div class="field-label">POS PIN</div>
+              <input type="password" id="create-pin" placeholder="e.g. 1234">
+            </div>
+            <div>
+              <div class="field-label">Admin PIN</div>
+              <input type="password" id="create-admin-pin" placeholder="e.g. 5555">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="create-btn" onclick="triggerCreateRestaurant()">Create Restaurant</button>
+          <div class="page-sub" style="margin-top:10px;">No menu yet — after this, add categories and products directly from the Products tab.</div>
         </div>
-        <button class="btn btn-primary" id="import-btn" onclick="triggerImport()">Import Products</button>
+
         <div class="import-result" id="import-result"></div>
         <div class="import-error" id="import-error"></div>
       </div>
@@ -3169,6 +3201,90 @@ async function reimportAddons() {
   }
 }
 
+// ── ONBOARDING MODE TOGGLE ──
+function setOnboardMode(mode) {
+  const wpForm = document.getElementById('onboard-wp');
+  const noneForm = document.getElementById('onboard-none');
+  const wpTab = document.getElementById('onboard-tab-wp');
+  const noneTab = document.getElementById('onboard-tab-none');
+
+  document.getElementById('import-result').style.display = 'none';
+  document.getElementById('import-error').style.display = 'none';
+
+  const activeStyle = 'flex:1;background:linear-gradient(135deg, var(--accent), var(--accent-dark));color:#fff;';
+  const inactiveStyle = 'flex:1;';
+
+  if (mode === 'wp') {
+    wpForm.style.display = 'block';
+    noneForm.style.display = 'none';
+    wpTab.className = 'btn';
+    wpTab.style.cssText = activeStyle;
+    noneTab.className = 'btn btn-secondary';
+    noneTab.style.cssText = inactiveStyle;
+  } else {
+    wpForm.style.display = 'none';
+    noneForm.style.display = 'block';
+    noneTab.className = 'btn';
+    noneTab.style.cssText = activeStyle;
+    wpTab.className = 'btn btn-secondary';
+    wpTab.style.cssText = inactiveStyle;
+  }
+}
+
+async function triggerCreateRestaurant() {
+  const code = document.getElementById('create-code').value.trim();
+  const name = document.getElementById('create-name').value.trim();
+  const pin = document.getElementById('create-pin').value.trim();
+  const adminPin = document.getElementById('create-admin-pin').value.trim();
+
+  if (!code || !name) {
+    showToast('Restaurant code and name are required', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+  document.getElementById('import-result').style.display = 'none';
+  document.getElementById('import-error').style.display = 'none';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/restaurants`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, pin: pin || undefined, admin_pin: adminPin || undefined })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('import-result').style.display = 'block';
+      document.getElementById('import-result').textContent =
+        `✓ "${name}" created with code "${code}". Add categories and products from the Products tab.`;
+      document.getElementById('create-code').value = '';
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-pin').value = '';
+      document.getElementById('create-admin-pin').value = '';
+      await loadRestaurantsList();
+
+      currentRestaurant = code;
+      const sel = document.getElementById('restaurant-select');
+      if (sel) sel.value = code;
+      sessionStorage.setItem('posup_restaurant', code);
+    } else {
+      document.getElementById('import-error').style.display = 'block';
+      document.getElementById('import-error').textContent = data.error || 'Failed to create restaurant';
+    }
+  } catch(e) {
+    document.getElementById('import-error').style.display = 'block';
+    document.getElementById('import-error').textContent = 'Network error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Restaurant';
+  }
+}
+
+</parameter>
+  
 // ── IMPORT ──
 async function triggerImport() {
   const code = document.getElementById('import-code').value.trim();
