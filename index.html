@@ -2901,6 +2901,7 @@ const description = `<input
               data-product-id="${escapeAttr(p.id)}"
               data-original-name="${escapeAttr(p.name)}"
               class="name-input"
+              placeholder="Product name"
               oninput="markNameChanged(this)"
               onblur="saveNameIfChanged(this)"
               onkeydown="if(event.key==='Tab'){event.preventDefault();event.shiftKey?focusPrevDescription(this):focusDescriptionOfRow(this);}if(event.key==='Enter'){this.blur();}"
