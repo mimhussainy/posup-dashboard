@@ -1953,7 +1953,7 @@
       <div class="action-right">
         <button class="btn btn-secondary" onclick="loadProducts()">↻ Refresh</button>
         <button class="btn btn-success" id="save-all-prices-btn" onclick="saveAllPrices()" style="display:none">💾 Save All Changes</button>
-        <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
+        <button class="btn btn-primary" onclick="openBulkAddModal()">+ Add Product</button>
       </div>
     </div>
 
@@ -2122,6 +2122,33 @@
   </div>
 </div>
 
+<!-- BULK ADD PRODUCTS MODAL -->
+<div class="modal-overlay" id="bulk-add-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Bulk Add Products</div>
+      <button class="modal-close" onclick="closeModal('bulk-add-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="field-label">How many empty products?</div>
+      <input type="number" id="bulk-qty" min="1" max="50" value="10">
+    </div>
+    <div class="form-row">
+      <div class="field-label">Category</div>
+      <select id="bulk-category" onchange="toggleBulkNewCategory(this)"></select>
+    </div>
+    <div class="form-row" id="bulk-new-category-row" style="display:none">
+      <div class="field-label">New Category Name</div>
+      <input type="text" id="bulk-new-category-name" placeholder="e.g. Desserts">
+    </div>
+    <div class="page-sub" style="margin-bottom:16px;">Empty rows will appear in the Products table below, ready to type names and prices directly.</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('bulk-add-modal')">Cancel</button>
+      <button class="btn btn-primary" id="bulk-insert-btn" onclick="insertBulkProducts()">Insert</button>
+    </div>
+  </div>
+</div>
+  
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -3079,6 +3106,99 @@ async function saveProduct() {
   }
 }
 
+// ── BULK ADD PRODUCTS ──
+function openBulkAddModal() {
+  document.getElementById('bulk-qty').value = 10;
+  const catSel = document.getElementById('bulk-category');
+  catSel.innerHTML = '<option value="">— No category —</option>' +
+    allCategories.map(c => `<option value="${escapeAttr(c.id)}" ${String(c.id) === String(selectedCategoryId) ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('') +
+    '<option value="__new__">+ Add new category...</option>';
+  document.getElementById('bulk-new-category-row').style.display = 'none';
+  document.getElementById('bulk-new-category-name').value = '';
+  openModal('bulk-add-modal');
+}
+
+function toggleBulkNewCategory(sel) {
+  const newRow = document.getElementById('bulk-new-category-row');
+  newRow.style.display = sel.value === '__new__' ? 'block' : 'none';
+  if (sel.value === '__new__') {
+    document.getElementById('bulk-new-category-name').focus();
+  }
+}
+
+async function insertBulkProducts() {
+  const qty = parseInt(document.getElementById('bulk-qty').value, 10);
+  if (!qty || qty < 1) { showToast('Enter a valid quantity', 'error'); return; }
+  if (qty > 50) { showToast('Please add 50 or fewer at a time', 'error'); return; }
+
+  let categoryId = document.getElementById('bulk-category').value;
+  const btn = document.getElementById('bulk-insert-btn');
+  btn.disabled = true;
+  btn.textContent = 'Inserting...';
+
+  try {
+    if (categoryId === '__new__') {
+      const newCatName = document.getElementById('bulk-new-category-name').value.trim();
+      if (!newCatName) {
+        showToast('Please enter a category name', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Insert';
+        return;
+      }
+      const catRes = await fetch(`${BACKEND}/posup/category`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName, restaurant_code: currentRestaurant })
+      });
+      const catData = await catRes.json();
+      if (!catData.success) {
+        showToast('Failed to create category', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Insert';
+        return;
+      }
+      categoryId = catData.category.id;
+      allCategories.push(catData.category);
+    }
+
+    let created = 0;
+    for (let i = 0; i < qty; i++) {
+      const res = await fetch(`${BACKEND}/posup/product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: '',
+          description: '',
+          price: 0,
+          active: true,
+          image_url: '',
+          is_alcohol: false,
+          restaurant_code: currentRestaurant,
+          category_id: categoryId || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) created++;
+    }
+
+    closeModal('bulk-add-modal');
+    showToast(`✓ ${created} empty product${created === 1 ? '' : 's'} added — type names and prices below`, 'success');
+
+    if (categoryId) selectedCategoryId = categoryId;
+    await loadProducts();
+
+    setTimeout(() => {
+      const firstEmpty = Array.from(document.querySelectorAll('.name-input')).find(inp => !inp.value.trim());
+      if (firstEmpty) { firstEmpty.focus(); firstEmpty.select(); }
+    }, 100);
+  } catch (e) {
+    showToast('Error inserting products', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Insert';
+  }
+}
+  
 // ── ADDONS ──
 async function loadAddons(forceRefresh = false) {
   if (!currentRestaurant) return;
