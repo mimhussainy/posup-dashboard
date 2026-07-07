@@ -1610,6 +1610,43 @@
     font-size: 12px;
     font-weight: 450;
   }
+
+    .restaurant-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  .restaurant-pin-btn {
+    min-height: 34px;
+    padding: 8px 11px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+
+  .pin-reset-success,
+  .pin-reset-error {
+    border-radius: 14px;
+    padding: 12px 13px;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .pin-reset-success {
+    background: var(--green-soft);
+    border: 1px solid rgba(22, 163, 74, 0.22);
+    color: var(--green);
+  }
+
+  .pin-reset-error {
+    background: var(--red-soft);
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    color: var(--red);
+  }
+  
   .restaurant-date {
     color: var(--text-soft);
     font-weight: 550;
@@ -2256,6 +2293,68 @@
     </div>
   </div>
 </div>
+
+<!-- RESET RESTAURANT PIN MODAL -->
+<div class="modal-overlay" id="pin-reset-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-kicker">Restaurant Security</div>
+        <h3 id="pin-reset-title">Reset PIN</h3>
+        <p id="pin-reset-sub" class="page-sub" style="margin-top:4px;">Choose which PIN you want to reset.</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('pin-reset-modal')">×</button>
+    </div>
+
+    <div class="modal-body">
+      <input type="hidden" id="pin-reset-restaurant-code">
+
+      <div class="form-row">
+        <label class="field-label">Private reset key</label>
+        <input
+          type="password"
+          id="pin-reset-admin-key"
+          placeholder="Your POSUP admin reset key"
+          autocomplete="off"
+        >
+        <div class="page-sub" style="margin-top:6px;">
+          This is the same value as <strong>POSUP_ADMIN_RESET_KEY</strong> in Render.
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="field-label">New owner / main PIN</label>
+        <input
+          type="password"
+          id="pin-reset-owner-pin"
+          placeholder="Leave empty if you do not want to change it"
+          inputmode="numeric"
+          autocomplete="new-password"
+        >
+      </div>
+
+      <div class="form-row">
+        <label class="field-label">New admin / staff PIN</label>
+        <input
+          type="password"
+          id="pin-reset-admin-pin"
+          placeholder="Leave empty if you do not want to change it"
+          inputmode="numeric"
+          autocomplete="new-password"
+        >
+      </div>
+
+      <div id="pin-reset-result" style="display:none;margin-top:12px;"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+        <button class="btn btn-secondary" onclick="closeModal('pin-reset-modal')">Cancel</button>
+        <button class="btn btn-danger" id="pin-reset-save-btn" onclick="confirmResetRestaurantPin()">
+          Reset PIN
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
   
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -2276,6 +2375,7 @@ let sortField = null;
 let sortDir = 1;
 let currentFilteredProducts = [];
 let productIssueFilter = null;
+let resetPinRestaurantCode = null;
 let pendingDeleteProductId = null;
 const DELETE_SKIP_KEY = 'posup_delete_confirm_skip_until';
 
@@ -3810,10 +3910,20 @@ async function loadRestaurantsList() {
           <div class="restaurant-code">${escapeHtml(r.code)}</div>
           <div class="restaurant-meta">
             <span>Last imported:</span>
-            <span class="restaurant-date" data-last-imported-for="${escapeAttr(r.code)}">Checking...</span>
+            <span class="restaurant-date" data-last-imported-for="${escapeAttr(r.code)}">Checking.</span>
           </div>
         </div>
-        <div class="restaurant-status"><span class="badge badge-active">Imported</span></div>
+
+        <div class="restaurant-status restaurant-actions">
+          <span class="badge badge-active">Imported</span>
+          <button
+            class="btn btn-secondary restaurant-pin-btn"
+            data-reset-code="${escapeAttr(r.code)}"
+            onclick="openResetPinModal(this)"
+          >
+            🔐 Reset PIN
+          </button>
+        </div>
       </div>
     `).join('');
 
@@ -3889,6 +3999,123 @@ function formatImportDate(value) {
   });
 }
 
+function openResetPinModal(button) {
+  const code = button?.dataset?.resetCode || '';
+  if (!code) {
+    showToast('Restaurant code missing', 'error');
+    return;
+  }
+
+  resetPinRestaurantCode = code;
+
+  const row = document.querySelector(`[data-restaurant-code="${cssEscape(code)}"]`);
+  const name = row?.querySelector('.restaurant-name')?.textContent || code;
+
+  document.getElementById('pin-reset-restaurant-code').value = code;
+  document.getElementById('pin-reset-title').textContent = `Reset PIN — ${name}`;
+  document.getElementById('pin-reset-sub').textContent = `Restaurant code: ${code}`;
+
+  document.getElementById('pin-reset-owner-pin').value = '';
+  document.getElementById('pin-reset-admin-pin').value = '';
+
+  const savedKey = sessionStorage.getItem('posup_admin_reset_key') || '';
+  document.getElementById('pin-reset-admin-key').value = savedKey;
+
+  const resultEl = document.getElementById('pin-reset-result');
+  resultEl.style.display = 'none';
+  resultEl.className = '';
+  resultEl.textContent = '';
+
+  openModal('pin-reset-modal');
+}
+
+async function confirmResetRestaurantPin() {
+  const restaurantCode = document.getElementById('pin-reset-restaurant-code').value.trim();
+  const adminKey = document.getElementById('pin-reset-admin-key').value.trim();
+  const newPin = document.getElementById('pin-reset-owner-pin').value.trim();
+  const newAdminPin = document.getElementById('pin-reset-admin-pin').value.trim();
+
+  const resultEl = document.getElementById('pin-reset-result');
+  const btn = document.getElementById('pin-reset-save-btn');
+
+  resultEl.style.display = 'none';
+  resultEl.className = '';
+  resultEl.textContent = '';
+
+  if (!restaurantCode) {
+    showToast('Restaurant code missing', 'error');
+    return;
+  }
+
+  if (!adminKey) {
+    showToast('Private reset key is required', 'error');
+    return;
+  }
+
+  if (!newPin && !newAdminPin) {
+    showToast('Enter owner PIN, admin PIN, or both', 'error');
+    return;
+  }
+
+  if (newPin && newPin.length < 4) {
+    showToast('Owner PIN must be at least 4 characters', 'error');
+    return;
+  }
+
+  if (newAdminPin && newAdminPin.length < 4) {
+    showToast('Admin PIN must be at least 4 characters', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Resetting...';
+
+  try {
+    const payload = {
+      admin_key: adminKey,
+      restaurant_code: restaurantCode,
+    };
+
+    if (newPin) payload.new_pin = newPin;
+    if (newAdminPin) payload.new_admin_pin = newAdminPin;
+
+    const res = await fetch(`${BACKEND}/posup/admin/reset-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to reset PIN');
+    }
+
+    sessionStorage.setItem('posup_admin_reset_key', adminKey);
+
+    document.getElementById('pin-reset-owner-pin').value = '';
+    document.getElementById('pin-reset-admin-pin').value = '';
+
+    resultEl.className = 'pin-reset-success';
+    resultEl.style.display = 'block';
+
+    const changed = [];
+    if (newPin) changed.push('owner PIN');
+    if (newAdminPin) changed.push('admin PIN');
+
+    resultEl.textContent = `✓ ${changed.join(' and ')} reset successfully for ${restaurantCode}.`;
+    showToast('✓ PIN reset successfully', 'success');
+  } catch (e) {
+    resultEl.className = 'pin-reset-error';
+    resultEl.style.display = 'block';
+    resultEl.textContent = '✗ ' + (e.message || 'Failed to reset PIN');
+    showToast(e.message || 'Failed to reset PIN', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Reset PIN';
+  }
+}
+  
 function cssEscape(value) {
   if (window.CSS && CSS.escape) return CSS.escape(String(value));
   return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
