@@ -1641,10 +1641,69 @@
     color: var(--green);
   }
 
+  
   .pin-reset-error {
     background: var(--red-soft);
     border: 1px solid rgba(220, 38, 38, 0.22);
     color: var(--red);
+  }
+
+  #pin-reset-modal .modal-box {
+    width: min(520px, calc(100vw - 32px));
+    background: #ffffff;
+    border: 1px solid rgba(225, 230, 239, 0.98);
+    border-radius: 24px;
+    box-shadow: 0 28px 90px rgba(15, 23, 42, 0.28);
+    overflow: hidden;
+  }
+
+  #pin-reset-modal .modal-header {
+    padding: 24px 24px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #pin-reset-modal .modal-body {
+    padding: 20px 24px 24px;
+    background: #ffffff;
+  }
+
+  #pin-reset-modal .modal-kicker {
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  #pin-reset-modal h3 {
+    font-size: 22px;
+    line-height: 1.15;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.04em;
+  }
+
+  #pin-reset-modal .modal-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #f8fafc;
+    color: var(--text-soft);
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  #pin-reset-modal .modal-close:hover {
+    background: #fff;
+    color: var(--red);
+    border-color: rgba(220, 38, 38, 0.22);
   }
   
   .restaurant-date {
@@ -2296,7 +2355,7 @@
 
 <!-- RESET RESTAURANT PIN MODAL -->
 <div class="modal-overlay" id="pin-reset-modal">
-  <div class="modal-box" style="max-width:520px;">
+  <div class="modal-box" style="max-width:520px; position:relative;">
     <div class="modal-header">
       <div>
         <div class="modal-kicker">Restaurant Security</div>
