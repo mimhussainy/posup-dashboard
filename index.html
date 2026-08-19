@@ -1502,6 +1502,82 @@
     line-height: 1 !important;
   }
 
+
+  /* ─────────────────────────────────────────────
+     PRINTER SETTINGS
+  ───────────────────────────────────────────── */
+  .printer-settings-wrap {
+    max-width: 820px;
+  }
+
+  .printer-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .printer-settings-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .printer-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .printer-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .printer-note {
+    padding: 13px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(109, 56, 255, 0.16);
+    background: var(--accent-soft);
+    color: var(--text-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+
+  .printer-note.warning {
+    border-color: rgba(217, 119, 6, 0.22);
+    background: var(--yellow-soft);
+  }
+
+  .printer-help {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .printer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .printer-settings-grid { grid-template-columns: 1fr; }
+    .printer-settings-grid .full { grid-column: auto; }
+  }
+
   /* ─────────────────────────────────────────────
      ADDONS
   ───────────────────────────────────────────── */
@@ -2090,6 +2166,7 @@
         <button class="nav-tab active" data-page="overview" onclick="showPage('overview', this)">Overview</button>
         <button class="nav-tab" data-page="products" onclick="showPage('products', this)">Products</button>
         <button class="nav-tab" data-page="addons" onclick="showPage('addons', this)">Addons</button>
+        <button class="nav-tab" data-page="settings" onclick="showPage('settings', this)">Settings</button>
         <button class="nav-tab" data-page="import" onclick="showPage('import', this)">Import</button>
       </div>
     </div>
@@ -2254,6 +2331,58 @@
     </div>
     <div id="addon-import-result" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:800;"></div>
     <div id="addons-list"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div>
+        <div class="page-kicker">Restaurant Settings</div>
+        <div class="page-title">Printer Settings</div>
+        <div class="page-sub" id="printer-settings-sub">Configure printing for the selected restaurant.</div>
+      </div>
+    </div>
+
+    <div class="printer-settings-wrap">
+      <div class="card">
+        <div class="printer-status-row">
+          <div class="card-title" style="margin-bottom:0;">🖨️ Receipt Printer</div>
+          <span class="printer-status-chip" id="printer-source-chip">Loading...</span>
+        </div>
+
+        <div id="printer-settings-note" class="printer-note" style="display:none;"></div>
+
+        <div class="printer-settings-grid">
+          <div class="full">
+            <div class="field-label">Printer Model</div>
+            <select id="printer-model" onchange="updatePrinterNetworkFields()">
+              <option value="">Not configured</option>
+              <option value="sunmi">SUNMI Built-in Printer</option>
+              <option value="wifi">WiFi Network Printer (ESC/POS)</option>
+              <option value="generic">Generic ESC/POS</option>
+              <option value="epson">Epson TM (USB via TCP server on Windows)</option>
+            </select>
+          </div>
+
+          <div id="printer-ip-wrap">
+            <div class="field-label">Printer IP Address</div>
+            <input type="text" id="printer-ip" placeholder="e.g. 192.168.1.100">
+            <div class="printer-help">For network printers, enter the printer or print-server IP address.</div>
+          </div>
+
+          <div id="printer-port-wrap">
+            <div class="field-label">Printer Port</div>
+            <input type="text" id="printer-port" placeholder="9100">
+            <div class="printer-help">Port 9100 is standard for most ESC/POS network printers.</div>
+          </div>
+        </div>
+
+        <div class="printer-actions">
+          <button class="btn btn-secondary" type="button" onclick="loadPrinterSettings()">↻ Reload</button>
+          <button class="btn btn-primary" type="button" id="printer-save-btn" onclick="savePrinterSettings()">Save Printer Settings</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- IMPORT PAGE -->
@@ -2718,6 +2847,7 @@ function showPage(name, tabEl) {
     else { renderCategoryFilter(); filterProducts(); }
   }
   if (name === 'addons') loadAddons();
+  if (name === 'settings') loadPrinterSettings();
   if (name === 'import') loadRestaurantsList();
   if (name === 'overview') loadOverview();
 }
@@ -2765,6 +2895,7 @@ function onRestaurantChange() {
   const activePage = getActivePage();
   if (activePage === 'products') loadProducts();
   else if (activePage === 'addons') loadAddons(true);
+  else if (activePage === 'settings') loadPrinterSettings();
   else if (activePage === 'import') loadRestaurantsList();
   else loadOverview();
 }
@@ -3845,6 +3976,148 @@ async function insertBulkProducts() {
   }
 }
   
+
+// ── PRINTER SETTINGS ──
+function setPrinterFieldsDisabled(disabled) {
+  ['printer-model', 'printer-ip', 'printer-port'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+  const saveBtn = document.getElementById('printer-save-btn');
+  if (saveBtn) saveBtn.disabled = disabled;
+}
+
+function updatePrinterNetworkFields() {
+  const modelEl = document.getElementById('printer-model');
+  const ipWrap = document.getElementById('printer-ip-wrap');
+  const portWrap = document.getElementById('printer-port-wrap');
+  if (!modelEl || !ipWrap || !portWrap) return;
+
+  const isSunmi = modelEl.value === 'sunmi';
+  ipWrap.style.display = isSunmi ? 'none' : '';
+  portWrap.style.display = isSunmi ? 'none' : '';
+
+  if (isSunmi && currentRestaurantWpLinked === false) {
+    document.getElementById('printer-ip').value = '';
+    document.getElementById('printer-port').value = '';
+  }
+}
+
+async function loadPrinterSettings() {
+  if (!currentRestaurant) return;
+
+  const sub = document.getElementById('printer-settings-sub');
+  const chip = document.getElementById('printer-source-chip');
+  const note = document.getElementById('printer-settings-note');
+  const model = document.getElementById('printer-model');
+  const ip = document.getElementById('printer-ip');
+  const port = document.getElementById('printer-port');
+
+  if (sub) sub.textContent = 'Loading printer settings...';
+  if (chip) chip.textContent = 'Loading...';
+  if (note) note.style.display = 'none';
+  setPrinterFieldsDisabled(true);
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/restaurants/${currentRestaurant}/settings`);
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.restaurant) {
+      throw new Error(data.error || 'Could not load printer settings');
+    }
+
+    const restaurant = data.restaurant;
+    currentRestaurantWpLinked = !!restaurant.wp_linked;
+
+    if (model) model.value = restaurant.printer_model || '';
+    if (ip) ip.value = restaurant.printer_ip || '';
+    if (port) port.value = restaurant.printer_port || '';
+
+    if (currentRestaurantWpLinked) {
+      if (sub) sub.textContent = 'This restaurant is connected to WordPress.';
+      if (chip) chip.textContent = 'Managed in WordPress';
+      if (note) {
+        note.className = 'printer-note warning';
+        note.textContent = 'Printer settings for this restaurant continue to be managed in WordPress. They are shown here for reference and cannot be edited in the dashboard.';
+        note.style.display = 'block';
+      }
+      setPrinterFieldsDisabled(true);
+    } else {
+      if (sub) sub.textContent = 'Configure the receipt printer directly in POSUP for this non-WordPress restaurant.';
+      if (chip) chip.textContent = 'Managed in POSUP';
+      if (note) {
+        note.className = 'printer-note';
+        note.innerHTML = '<strong>SUNMI:</strong> select SUNMI Built-in Printer and leave IP/Port blank. <strong>Network printers:</strong> enter the printer IP and usually port 9100.';
+        note.style.display = 'block';
+      }
+      setPrinterFieldsDisabled(false);
+    }
+
+    updatePrinterNetworkFields();
+  } catch (e) {
+    console.error(e);
+    if (sub) sub.textContent = 'Could not load printer settings.';
+    if (chip) chip.textContent = 'Error';
+    if (note) {
+      note.className = 'printer-note warning';
+      note.textContent = e.message || 'Could not load printer settings';
+      note.style.display = 'block';
+    }
+    setPrinterFieldsDisabled(true);
+  }
+}
+
+async function savePrinterSettings() {
+  if (!currentRestaurant) return;
+  if (currentRestaurantWpLinked) {
+    showToast('WordPress-linked printer settings must be changed in WordPress', 'error');
+    return;
+  }
+
+  const model = document.getElementById('printer-model').value;
+  let printerIp = document.getElementById('printer-ip').value.trim();
+  let printerPort = document.getElementById('printer-port').value.trim();
+
+  if (model === 'sunmi') {
+    printerIp = '';
+    printerPort = '';
+  } else if (model && (!printerIp || !printerPort)) {
+    showToast('Printer IP and port are required for network printers', 'error');
+    return;
+  }
+
+  const saveBtn = document.getElementById('printer-save-btn');
+  saveBtn.disabled = true;
+  const oldText = saveBtn.textContent;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/restaurants/${currentRestaurant}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        printer_model: model,
+        printer_ip: printerIp,
+        printer_port: printerPort,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Could not save printer settings');
+    }
+
+    showToast('Printer settings saved', 'success');
+    await loadPrinterSettings();
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'Could not save printer settings', 'error');
+  } finally {
+    saveBtn.textContent = oldText;
+    if (!currentRestaurantWpLinked) saveBtn.disabled = false;
+  }
+}
+
 // ── ADDONS ──
 async function loadAddons(forceRefresh = false) {
   if (!currentRestaurant) return;
