@@ -1554,6 +1554,80 @@
   .addon-price.free { color: var(--muted); }
   .addon-chevron { color: var(--muted); font-size: 12px; transition: transform 0.2s; display: inline-block; }
 
+  .addon-manual-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .addon-edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 6px;
+  }
+
+  .addon-assignment-summary {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+    margin-top: 5px;
+  }
+
+  .addon-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .addon-check-list {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    max-height: 185px;
+    overflow: auto;
+    background: rgba(248, 250, 252, 0.72);
+  }
+
+  .addon-check-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .addon-check-row:last-child { border-bottom: none; }
+  .addon-check-row input { width: auto; }
+
+  .addon-option-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .addon-option-editor input { min-width: 0; }
+
+  .addon-section-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .addon-section-label .field-label { margin-bottom: 0; }
+
+  @media (max-width: 680px) {
+    .addon-form-grid { grid-template-columns: 1fr; }
+    .addon-option-editor { grid-template-columns: 1fr 105px auto; }
+  }
+
+
   /* ─────────────────────────────────────────────
      IMPORT
   ───────────────────────────────────────────── */
@@ -2167,14 +2241,15 @@
       <div>
         <div class="page-kicker">Options</div>
         <div class="page-title">Addon Groups</div>
-        <div class="page-sub">Addons are managed in WordPress/Orderable. Import here to sync addon groups.</div>
+        <div class="page-sub" id="addons-page-sub">Loading addon settings...</div>
       </div>
     </div>
     <div class="toolbar">
       <div class="toolbar-left"></div>
-      <div class="toolbar-right">
+      <div class="toolbar-right addon-manual-actions">
         <button class="btn btn-secondary" onclick="loadAddons(true)">↻ Refresh</button>
-        <button class="btn btn-primary" id="addon-import-btn" onclick="reimportAddons()">⬇ Import from WordPress</button>
+        <button class="btn btn-primary" id="addon-create-btn" style="display:none" onclick="openAddonModal()">＋ Add Addon Group</button>
+        <button class="btn btn-primary" id="addon-import-btn" style="display:none" onclick="reimportAddons()">⬇ Import from WordPress</button>
       </div>
     </div>
     <div id="addon-import-result" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:800;"></div>
@@ -2415,6 +2490,71 @@
   </div>
 </div>
   
+<!-- MANUAL ADDON GROUP MODAL -->
+<div class="modal-overlay" id="addon-modal">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <div class="modal-title" id="addon-modal-title">Add Addon Group</div>
+      <button class="modal-close" onclick="closeModal('addon-modal')">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="field-label">Group Name</div>
+      <input type="text" id="addon-edit-name" placeholder="e.g. Extra toppings">
+    </div>
+
+    <div class="addon-form-grid form-row">
+      <div>
+        <div class="field-label">Selection Type</div>
+        <select id="addon-edit-type">
+          <option value="checkbox">Multiple choices</option>
+          <option value="radio">Single choice</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label">Required</div>
+        <select id="addon-edit-required">
+          <option value="false">Optional</option>
+          <option value="true">Customer must choose</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="addon-form-grid form-row">
+      <div>
+        <div class="addon-section-label">
+          <div class="field-label">Apply to Categories</div>
+          <button class="btn btn-secondary" type="button" style="padding:6px 9px;font-size:11px" onclick="toggleAllAddonAssignments('category')">Select all</button>
+        </div>
+        <div class="addon-check-list" id="addon-category-assignments"></div>
+      </div>
+      <div>
+        <div class="addon-section-label">
+          <div class="field-label">Apply to Products</div>
+          <button class="btn btn-secondary" type="button" style="padding:6px 9px;font-size:11px" onclick="toggleAllAddonAssignments('product')">Select all</button>
+        </div>
+        <div class="addon-check-list" id="addon-product-assignments"></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="addon-section-label">
+        <div>
+          <div class="field-label">Addon Options</div>
+          <div style="font-size:12px;color:var(--muted);font-weight:650;">Add the option name and extra CHF price.</div>
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="addAddonOptionRow()">＋ Add option</button>
+      </div>
+      <div id="addon-options-editor"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="closeModal('addon-modal')">Cancel</button>
+      <button class="btn btn-primary" id="addon-save-btn" onclick="saveAddonGroup()">Save Addon Group</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -2436,6 +2576,8 @@ let currentFilteredProducts = [];
 let productIssueFilter = null;
 let resetPinRestaurantCode = null;
 let pendingDeleteProductId = null;
+let currentRestaurantWpLinked = null;
+let editingAddonGroupId = null;
 const DELETE_SKIP_KEY = 'posup_delete_confirm_skip_until';
 
 // ── HELPERS ──
@@ -2614,6 +2756,8 @@ function onRestaurantChange() {
   allProducts = [];
   allCategories = [];
   allAddons = [];
+  currentRestaurantWpLinked = null;
+  editingAddonGroupId = null;
   selectedCategoryId = 'all';
   document.getElementById('products-table').innerHTML = '';
   document.getElementById('addons-list').innerHTML = '';
@@ -3705,7 +3849,8 @@ async function insertBulkProducts() {
 async function loadAddons(forceRefresh = false) {
   if (!currentRestaurant) return;
 
-  if (!forceRefresh && allAddons.length > 0) {
+  if (!forceRefresh && allAddons.length > 0 && currentRestaurantWpLinked !== null) {
+    updateAddonPageMode();
     renderAddons();
     return;
   }
@@ -3713,23 +3858,70 @@ async function loadAddons(forceRefresh = false) {
   document.getElementById('addons-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
   try {
-    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
-    const data = await res.json();
+    const [menuRes, settingsRes] = await Promise.all([
+      fetch(`${BACKEND}/posup/products/${currentRestaurant}`),
+      fetch(`${BACKEND}/posup/restaurants/${currentRestaurant}/settings`)
+    ]);
+
+    const data = await menuRes.json();
+    const settingsData = await settingsRes.json();
+
+    if (!menuRes.ok) throw new Error(data.error || 'Could not load addons');
+
     allCategories = data.categories || [];
+    allProducts = data.products || [];
     allAddons = data.addons || [];
+    currentRestaurantWpLinked = !!settingsData?.restaurant?.wp_linked;
+
+    updateAddonPageMode();
     renderAddons();
   } catch(e) {
+    console.error(e);
     document.getElementById('addons-list').innerHTML = '<div class="empty-state">Error loading addons</div>';
   }
 }
 
+function updateAddonPageMode() {
+  const sub = document.getElementById('addons-page-sub');
+  const importBtn = document.getElementById('addon-import-btn');
+  const createBtn = document.getElementById('addon-create-btn');
+
+  if (currentRestaurantWpLinked) {
+    if (sub) sub.textContent = 'Addons are managed in WordPress/Orderable. Import here to sync addon groups.';
+    if (importBtn) importBtn.style.display = '';
+    if (createBtn) createBtn.style.display = 'none';
+  } else {
+    if (sub) sub.textContent = 'Create and manage addon groups directly in POSUP for this restaurant.';
+    if (importBtn) importBtn.style.display = 'none';
+    if (createBtn) createBtn.style.display = '';
+  }
+}
+
+function addonAssignmentNames(group) {
+  const categoryNames = (group.assigned_category_ids || [])
+    .map(id => allCategories.find(c => String(c.id) === String(id))?.name)
+    .filter(Boolean);
+
+  const productNames = (group.assigned_product_ids || [])
+    .map(id => allProducts.find(p => String(p.id) === String(id))?.name)
+    .filter(Boolean);
+
+  const parts = [];
+  if (categoryNames.length) parts.push(`Categories: ${categoryNames.join(', ')}`);
+  if (productNames.length) parts.push(`Products: ${productNames.join(', ')}`);
+  return parts.join(' · ');
+}
+
 function renderAddons() {
+  const container = document.getElementById('addons-list');
+
   if (allAddons.length === 0) {
-    document.getElementById('addons-list').innerHTML = '<div class="empty-state">No addons imported yet</div>';
+    container.innerHTML = currentRestaurantWpLinked
+      ? '<div class="empty-state">No addons imported yet</div>'
+      : '<div class="empty-state">No addon groups yet. Click “Add Addon Group” to create one.</div>';
     return;
   }
 
-  const container = document.getElementById('addons-list');
   container.innerHTML = '';
 
   allAddons.forEach(group => {
@@ -3744,12 +3936,21 @@ function renderAddons() {
           <span class="addon-bullet"></span>
           <span>${escapeHtml(opt.name)}</span>
           ${opt.required ? '<span class="badge badge-active">required</span>' : ''}
+          <span class="badge badge-simple">${opt.type === 'radio' ? 'single' : 'multiple'}</span>
         </div>
         <span class="addon-price ${Number(opt.price || 0) > 0 ? '' : 'free'}">
           ${Number(opt.price || 0) > 0 ? '+ CHF ' + formatPrice(opt.price) : 'free'}
         </span>
       </div>
     `).join('');
+
+    const assignmentText = addonAssignmentNames(group);
+    const manualActions = !currentRestaurantWpLinked ? `
+      <div class="addon-edit-actions">
+        <button class="btn btn-secondary" type="button" style="padding:7px 10px;font-size:11px" onclick="event.stopPropagation();openAddonModal('${escapeAttr(group.id)}')">Edit</button>
+        <button class="btn btn-danger" type="button" style="padding:7px 10px;font-size:11px" onclick="event.stopPropagation();deleteAddonGroup('${escapeAttr(group.id)}')">Delete</button>
+      </div>
+    ` : '';
 
     const card = document.createElement('div');
     card.className = 'addon-card';
@@ -3759,9 +3960,11 @@ function renderAddons() {
         <div style="flex:1;min-width:0;">
           <div class="addon-title">${escapeHtml(group.name)}</div>
           <div class="addon-meta">${catNames || '<span style="font-size:12px;color:var(--muted);font-weight:700;">No category assigned</span>'}</div>
+          ${assignmentText ? `<div class="addon-assignment-summary">${escapeHtml(assignmentText)}</div>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <span class="badge badge-simple">${group.options?.length || 0} options</span>
+          ${manualActions}
           <span class="addon-chevron">▼</span>
         </div>
       </div>
@@ -3789,10 +3992,194 @@ function toggleAddonGroup(header) {
   }
 }
 
+function buildAddonAssignmentLists(group = null) {
+  const selectedCategories = new Set((group?.assigned_category_ids || []).map(String));
+  const selectedProducts = new Set((group?.assigned_product_ids || []).map(String));
+
+  const catContainer = document.getElementById('addon-category-assignments');
+  const productContainer = document.getElementById('addon-product-assignments');
+
+  catContainer.innerHTML = allCategories.length
+    ? allCategories.map(cat => `
+        <label class="addon-check-row">
+          <input type="checkbox" data-addon-assignment="category" value="${escapeAttr(cat.id)}" ${selectedCategories.has(String(cat.id)) ? 'checked' : ''}>
+          <span>${escapeHtml(cat.name)}</span>
+        </label>
+      `).join('')
+    : '<div class="empty-state" style="padding:18px;">No categories</div>';
+
+  productContainer.innerHTML = allProducts.length
+    ? allProducts.map(product => `
+        <label class="addon-check-row">
+          <input type="checkbox" data-addon-assignment="product" value="${escapeAttr(product.id)}" ${selectedProducts.has(String(product.id)) ? 'checked' : ''}>
+          <span>${escapeHtml(product.name)}</span>
+        </label>
+      `).join('')
+    : '<div class="empty-state" style="padding:18px;">No products</div>';
+}
+
+function addAddonOptionRow(option = {}) {
+  const editor = document.getElementById('addon-options-editor');
+  const row = document.createElement('div');
+  row.className = 'addon-option-editor';
+
+  const name = String(option.name || '');
+  const price = Number(option.price || 0);
+
+  row.innerHTML = `
+    <input type="text" data-addon-option-name placeholder="Option name" value="${escapeAttr(name)}">
+    <input type="number" data-addon-option-price step="0.05" placeholder="CHF" value="${escapeAttr(Number.isFinite(price) ? formatPrice(price) : '0')}">
+    <button class="btn btn-secondary" type="button" style="padding:9px 11px" onclick="this.closest('.addon-option-editor').remove()">✕</button>
+  `;
+  editor.appendChild(row);
+}
+
+function openAddonModal(groupId = null) {
+  if (currentRestaurantWpLinked) {
+    showToast('WordPress-linked addons must be managed in WordPress/Orderable', 'error');
+    return;
+  }
+
+  editingAddonGroupId = groupId || null;
+  const group = groupId ? allAddons.find(g => String(g.id) === String(groupId)) : null;
+
+  document.getElementById('addon-modal-title').textContent = group ? 'Edit Addon Group' : 'Add Addon Group';
+  document.getElementById('addon-edit-name').value = group?.name || '';
+
+  const firstOption = group?.options?.[0] || {};
+  document.getElementById('addon-edit-type').value = firstOption.type === 'radio' ? 'radio' : 'checkbox';
+  document.getElementById('addon-edit-required').value = firstOption.required ? 'true' : 'false';
+
+  buildAddonAssignmentLists(group);
+
+  const editor = document.getElementById('addon-options-editor');
+  editor.innerHTML = '';
+  const existingOptions = group?.options || [];
+  if (existingOptions.length) existingOptions.forEach(addon => addAddonOptionRow(addon));
+  else addAddonOptionRow({ name: '', price: 0 });
+
+  document.getElementById('addon-modal').classList.add('open');
+  setTimeout(() => document.getElementById('addon-edit-name')?.focus(), 0);
+}
+
+function toggleAllAddonAssignments(kind) {
+  const boxes = Array.from(document.querySelectorAll(`input[data-addon-assignment="${kind}"]`));
+  if (!boxes.length) return;
+  const shouldCheck = boxes.some(box => !box.checked);
+  boxes.forEach(box => { box.checked = shouldCheck; });
+}
+
+function collectCheckedAddonAssignments(kind) {
+  return Array.from(document.querySelectorAll(`input[data-addon-assignment="${kind}"]:checked`))
+    .map(input => input.value);
+}
+
+function collectAddonOptions() {
+  const type = document.getElementById('addon-edit-type').value === 'radio' ? 'radio' : 'checkbox';
+  const required = document.getElementById('addon-edit-required').value === 'true';
+
+  return Array.from(document.querySelectorAll('#addon-options-editor .addon-option-editor'))
+    .map(row => {
+      const name = row.querySelector('[data-addon-option-name]').value.trim();
+      const rawPrice = Number(row.querySelector('[data-addon-option-price]').value || 0);
+      return {
+        name,
+        price: Number.isFinite(rawPrice) ? rawPrice : 0,
+        type,
+        required,
+        active: true,
+      };
+    })
+    .filter(option => option.name);
+}
+
+async function saveAddonGroup() {
+  if (!currentRestaurant || currentRestaurantWpLinked) return;
+
+  const name = document.getElementById('addon-edit-name').value.trim();
+  const options = collectAddonOptions();
+
+  if (!name) {
+    showToast('Addon group name is required', 'error');
+    return;
+  }
+  if (options.length === 0) {
+    showToast('Add at least one addon option', 'error');
+    return;
+  }
+
+  const payload = {
+    restaurant_code: currentRestaurant,
+    name,
+    active: true,
+    options,
+    assigned_category_ids: collectCheckedAddonAssignments('category'),
+    assigned_product_ids: collectCheckedAddonAssignments('product'),
+  };
+
+  const btn = document.getElementById('addon-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(
+      editingAddonGroupId
+        ? `${BACKEND}/posup/addon-group/${editingAddonGroupId}`
+        : `${BACKEND}/posup/addon-group`,
+      {
+        method: editingAddonGroupId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
+    const data = await res.json();
+
+    if (!res.ok || !data.success) throw new Error(data.error || 'Failed to save addon group');
+
+    closeModal('addon-modal');
+    editingAddonGroupId = null;
+    allAddons = [];
+    showToast('Addon group saved', 'success');
+    await loadAddons(true);
+  } catch(e) {
+    showToast(e.message || 'Failed to save addon group', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Addon Group';
+  }
+}
+
+async function deleteAddonGroup(groupId) {
+  if (currentRestaurantWpLinked) return;
+
+  const group = allAddons.find(g => String(g.id) === String(groupId));
+  if (!group) return;
+
+  if (!confirm(`Delete addon group "${group.name}"? This cannot be undone.`)) return;
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/addon-group/${groupId}`, { method: 'DELETE' });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) throw new Error(data.error || 'Failed to delete addon group');
+
+    allAddons = allAddons.filter(g => String(g.id) !== String(groupId));
+    renderAddons();
+    showToast('Addon group deleted', 'success');
+  } catch(e) {
+    showToast(e.message || 'Failed to delete addon group', 'error');
+  }
+}
+
 // ── REIMPORT ADDONS ──
 async function reimportAddons() {
   const restaurant = currentRestaurant;
   if (!restaurant) { showToast('Select a restaurant first', 'error'); return; }
+
+  if (!currentRestaurantWpLinked) {
+    showToast('This restaurant is not linked to WordPress. Add addons manually instead.', 'error');
+    return;
+  }
 
   const btn = document.getElementById('addon-import-btn');
   const resultEl = document.getElementById('addon-import-result');
@@ -3810,6 +4197,7 @@ async function reimportAddons() {
     if (data.success) {
       resultEl.style.cssText = 'display:block;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.25);color:#16a34a;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:800;margin-bottom:16px;';
       resultEl.textContent = `✓ Addons imported successfully! ${data.imported.addons} addon groups imported. Products and prices unchanged.`;
+      allAddons = [];
       await loadAddons(true);
     } else {
       throw new Error(data.error || 'Import failed');
@@ -3823,89 +4211,6 @@ async function reimportAddons() {
   }
 }
 
-// ── ONBOARDING MODE TOGGLE ──
-function setOnboardMode(mode) {
-  const wpForm = document.getElementById('onboard-wp');
-  const noneForm = document.getElementById('onboard-none');
-  const wpTab = document.getElementById('onboard-tab-wp');
-  const noneTab = document.getElementById('onboard-tab-none');
-
-  document.getElementById('import-result').style.display = 'none';
-  document.getElementById('import-error').style.display = 'none';
-
-  const activeStyle = 'flex:1;background:linear-gradient(135deg, var(--accent), var(--accent-dark));color:#fff;';
-  const inactiveStyle = 'flex:1;';
-
-  if (mode === 'wp') {
-    wpForm.style.display = 'block';
-    noneForm.style.display = 'none';
-    wpTab.className = 'btn';
-    wpTab.style.cssText = activeStyle;
-    noneTab.className = 'btn btn-secondary';
-    noneTab.style.cssText = inactiveStyle;
-  } else {
-    wpForm.style.display = 'none';
-    noneForm.style.display = 'block';
-    noneTab.className = 'btn';
-    noneTab.style.cssText = activeStyle;
-    wpTab.className = 'btn btn-secondary';
-    wpTab.style.cssText = inactiveStyle;
-  }
-}
-
-async function triggerCreateRestaurant() {
-  const code = document.getElementById('create-code').value.trim();
-  const name = document.getElementById('create-name').value.trim();
-  const pin = document.getElementById('create-pin').value.trim();
-  const adminPin = document.getElementById('create-admin-pin').value.trim();
-
-  if (!code || !name) {
-    showToast('Restaurant code and name are required', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('create-btn');
-  btn.disabled = true;
-  btn.textContent = 'Creating...';
-  document.getElementById('import-result').style.display = 'none';
-  document.getElementById('import-error').style.display = 'none';
-
-  try {
-    const res = await fetch(`${BACKEND}/posup/restaurants`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, pin: pin || undefined, admin_pin: adminPin || undefined })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      document.getElementById('import-result').style.display = 'block';
-      document.getElementById('import-result').textContent =
-        `✓ "${name}" created with code "${code}". Add categories and products from the Products tab.`;
-      document.getElementById('create-code').value = '';
-      document.getElementById('create-name').value = '';
-      document.getElementById('create-pin').value = '';
-      document.getElementById('create-admin-pin').value = '';
-      await loadRestaurantsList();
-
-const sel = document.getElementById('restaurant-select');
-      if (sel) sel.value = code;
-      onRestaurantChange();
-    } else {
-      document.getElementById('import-error').style.display = 'block';
-      document.getElementById('import-error').textContent = data.error || 'Failed to create restaurant';
-    }
-  } catch(e) {
-    document.getElementById('import-error').style.display = 'block';
-    document.getElementById('import-error').textContent = 'Network error: ' + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Create Restaurant';
-  }
-}
-
-
-  
 // ── IMPORT ──
 async function triggerImport() {
   const code = document.getElementById('import-code').value.trim();
