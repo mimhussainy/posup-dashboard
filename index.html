@@ -4008,11 +4008,15 @@ function buildAddonAssignmentLists(group = null) {
       `).join('')
     : '<div class="empty-state" style="padding:18px;">No categories</div>';
 
-  productContainer.innerHTML = allProducts.length
-    ? allProducts.map(product => `
+  const assignableProducts = allProducts.filter(product =>
+    String(product?.name || '').trim().length > 0
+  );
+
+  productContainer.innerHTML = assignableProducts.length
+    ? assignableProducts.map(product => `
         <label class="addon-check-row">
           <input type="checkbox" data-addon-assignment="product" value="${escapeAttr(product.id)}" ${selectedProducts.has(String(product.id)) ? 'checked' : ''}>
-          <span>${escapeHtml(product.name)}</span>
+          <span>${escapeHtml(String(product.name).trim())}</span>
         </label>
       `).join('')
     : '<div class="empty-state" style="padding:18px;">No products</div>';
