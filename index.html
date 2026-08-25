@@ -1502,6 +1502,128 @@
     line-height: 1 !important;
   }
 
+
+  /* ─────────────────────────────────────────────
+     RESTAURANT SETTINGS
+  ───────────────────────────────────────────── */
+  .settings-wrap {
+    max-width: 1060px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .settings-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .settings-source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .settings-note {
+    padding: 13px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(109, 56, 255, 0.16);
+    background: var(--accent-soft);
+    color: var(--text-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+
+  .settings-note.warning {
+    border-color: rgba(217, 119, 6, 0.22);
+    background: var(--yellow-soft);
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .settings-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .settings-section-sub {
+    margin-top: -4px;
+    margin-bottom: 16px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .settings-help {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .logo-setting {
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 13px;
+    background: var(--surface-2);
+  }
+
+  .logo-preview {
+    height: 90px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    margin-top: 10px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .logo-preview img {
+    max-width: 100%;
+    max-height: 78px;
+    object-fit: contain;
+  }
+
+  .settings-conditional {
+    margin-top: 14px;
+  }
+
+  .settings-conditional.is-hidden {
+    display: none;
+  }
+
+  .settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-grid .full { grid-column: auto; }
+  }
+
   /* ─────────────────────────────────────────────
      ADDONS
   ───────────────────────────────────────────── */
@@ -2090,6 +2212,7 @@
         <button class="nav-tab active" data-page="overview" onclick="showPage('overview', this)">Overview</button>
         <button class="nav-tab" data-page="products" onclick="showPage('products', this)">Products</button>
         <button class="nav-tab" data-page="addons" onclick="showPage('addons', this)">Addons</button>
+        <button class="nav-tab" data-page="settings" onclick="showPage('settings', this)">Settings</button>
         <button class="nav-tab" data-page="import" onclick="showPage('import', this)">Import</button>
       </div>
     </div>
@@ -2254,6 +2377,145 @@
     </div>
     <div id="addon-import-result" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:800;"></div>
     <div id="addons-list"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div>
+        <div class="page-kicker">Restaurant Settings</div>
+        <div class="page-title">Settings</div>
+        <div class="page-sub" id="settings-sub">Loading settings for the selected restaurant...</div>
+      </div>
+    </div>
+
+    <div class="settings-wrap">
+      <div class="card">
+        <div class="settings-top-row">
+          <div class="card-title" style="margin-bottom:0;">Restaurant configuration</div>
+          <span class="settings-source-chip" id="settings-source-chip">Loading...</span>
+        </div>
+        <div id="settings-note" class="settings-note" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Restaurant</div>
+        <div class="settings-section-sub">Shared restaurant information. For a non-WordPress restaurant, POSUP is the source of truth.</div>
+        <div class="settings-grid">
+          <div>
+            <div class="field-label">Restaurant Code</div>
+            <input type="text" id="settings-code" readonly>
+            <div class="settings-help">The restaurant code cannot be changed after creation.</div>
+          </div>
+          <div>
+            <div class="field-label">Restaurant Name</div>
+            <input type="text" id="settings-name" placeholder="Restaurant name">
+          </div>
+          <div class="full">
+            <div class="field-label">Address</div>
+            <input type="text" id="settings-address" placeholder="Street, postal code, city">
+          </div>
+          <div>
+            <div class="field-label">Contact Phone</div>
+            <input type="text" id="settings-phone" placeholder="e.g. +41 52 000 00 00">
+          </div>
+          <div>
+            <div class="field-label">Website <span style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></div>
+            <input type="text" id="settings-website" placeholder="restaurant.ch">
+            <div class="settings-help">This can be left blank for restaurants without a website.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Branding</div>
+        <div class="settings-section-sub">The same logo roles used by the FoodUp WordPress settings are available here for non-WordPress restaurants.</div>
+        <div class="settings-grid">
+          <div class="logo-setting">
+            <div class="field-label">Main Logo</div>
+            <input type="text" id="settings-main-logo" placeholder="https://.../logo.png" oninput="refreshSettingsLogoPreviews()">
+            <div class="settings-help">Shared restaurant logo used by POSUP and available to connected apps.</div>
+            <div class="logo-preview" id="settings-main-logo-preview">No logo</div>
+          </div>
+          <div class="logo-setting">
+            <div class="field-label">Email Header Logo</div>
+            <input type="text" id="settings-email-logo" placeholder="https://.../email-logo.png" oninput="refreshSettingsLogoPreviews()">
+            <div class="settings-help">Optional email-specific logo. If left blank, the main logo is used when settings are saved.</div>
+            <div class="logo-preview" id="settings-email-logo-preview">No logo</div>
+          </div>
+          <div class="logo-setting full">
+            <div class="field-label">Receipt / Print Logo</div>
+            <input type="text" id="settings-print-logo" placeholder="https://.../receipt-logo.png" oninput="refreshSettingsLogoPreviews()">
+            <div class="settings-help">Logo used by FoodUp/POSUP printing. If left blank, the main logo is used when settings are saved.</div>
+            <div class="logo-preview" id="settings-print-logo-preview">No logo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Orders App</div>
+        <div class="settings-section-sub">Settings that previously lived in the WordPress Orders plugin can be managed here for non-WordPress restaurants.</div>
+        <div class="settings-grid">
+          <div class="full">
+            <div class="field-label">Printer Device ID</div>
+            <input type="text" id="settings-printer-device-id" placeholder="Paste the Device ID from the FoodUp Orders app">
+            <div class="settings-help">Use this when one physical FoodUp Orders device should be the restaurant's registered printer device.</div>
+          </div>
+          <div>
+            <div class="field-label">Automatic Fallback</div>
+            <select id="settings-auto-action" onchange="updateAutoSettingsFields()">
+              <option value="disabled">Disabled</option>
+              <option value="accept">Auto Accept</option>
+              <option value="reject">Auto Reject</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Wait Time (minutes)</div>
+            <input type="number" id="settings-auto-wait" min="1" max="60" value="5">
+          </div>
+        </div>
+        <div id="settings-auto-accept-fields" class="settings-conditional is-hidden">
+          <div class="field-label">Auto Accept Preparation Time</div>
+          <input type="text" id="settings-auto-accept-time" value="30 Minutes" placeholder="e.g. 30 Minutes">
+        </div>
+        <div id="settings-auto-reject-fields" class="settings-conditional is-hidden">
+          <div class="field-label">Auto Reject Reason</div>
+          <input type="text" id="settings-auto-reject-reason" value="Zu beschäftigt" placeholder="Reason shown to the customer">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Receipt Printer</div>
+        <div class="settings-section-sub">Configure the printer used by POSUP for this restaurant.</div>
+        <div class="settings-grid">
+          <div class="full">
+            <div class="field-label">Printer Model</div>
+            <select id="printer-model" onchange="updatePrinterNetworkFields()">
+              <option value="">Not configured</option>
+              <option value="sunmi">SUNMI Built-in Printer</option>
+              <option value="wifi">WiFi Network Printer (ESC/POS)</option>
+              <option value="generic">Generic ESC/POS</option>
+              <option value="epson">Epson TM (USB via TCP server on Windows)</option>
+            </select>
+          </div>
+          <div id="printer-ip-wrap">
+            <div class="field-label">Printer IP Address</div>
+            <input type="text" id="printer-ip" placeholder="e.g. 192.168.1.100">
+            <div class="settings-help">For a network printer, enter the printer or print-server IP address.</div>
+          </div>
+          <div id="printer-port-wrap">
+            <div class="field-label">Printer Port</div>
+            <input type="text" id="printer-port" placeholder="9100">
+            <div class="settings-help">Port 9100 is standard for most ESC/POS network printers.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn btn-secondary" type="button" onclick="loadRestaurantSettings(true)">↻ Reload</button>
+        <button class="btn btn-primary" type="button" id="settings-save-btn" onclick="saveRestaurantSettings()">Save Settings</button>
+      </div>
+    </div>
   </div>
 
   <!-- IMPORT PAGE -->
@@ -2718,6 +2980,7 @@ function showPage(name, tabEl) {
     else { renderCategoryFilter(); filterProducts(); }
   }
   if (name === 'addons') loadAddons();
+  if (name === 'settings') loadRestaurantSettings();
   if (name === 'import') loadRestaurantsList();
   if (name === 'overview') loadOverview();
 }
@@ -2765,6 +3028,7 @@ function onRestaurantChange() {
   const activePage = getActivePage();
   if (activePage === 'products') loadProducts();
   else if (activePage === 'addons') loadAddons(true);
+  else if (activePage === 'settings') loadRestaurantSettings();
   else if (activePage === 'import') loadRestaurantsList();
   else loadOverview();
 }
@@ -3845,6 +4109,318 @@ async function insertBulkProducts() {
   }
 }
   
+
+// ── RESTAURANT SETTINGS ──
+let loadedRestaurantSettings = null;
+
+const SETTINGS_EDITABLE_IDS = [
+  'settings-name', 'settings-address', 'settings-phone', 'settings-website',
+  'settings-main-logo', 'settings-email-logo', 'settings-print-logo',
+  'settings-printer-device-id', 'settings-auto-action', 'settings-auto-wait',
+  'settings-auto-accept-time', 'settings-auto-reject-reason',
+  'printer-model', 'printer-ip', 'printer-port'
+];
+
+function setSettingsFieldsDisabled(disabled) {
+  SETTINGS_EDITABLE_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+  const saveBtn = document.getElementById('settings-save-btn');
+  if (saveBtn) saveBtn.disabled = disabled;
+}
+
+function updatePrinterNetworkFields() {
+  const modelEl = document.getElementById('printer-model');
+  const ipWrap = document.getElementById('printer-ip-wrap');
+  const portWrap = document.getElementById('printer-port-wrap');
+  if (!modelEl || !ipWrap || !portWrap) return;
+
+  const isSunmi = modelEl.value === 'sunmi';
+  ipWrap.style.display = isSunmi ? 'none' : '';
+  portWrap.style.display = isSunmi ? 'none' : '';
+
+  if (isSunmi && currentRestaurantWpLinked === false) {
+    const ip = document.getElementById('printer-ip');
+    const port = document.getElementById('printer-port');
+    if (ip) ip.value = '';
+    if (port) port.value = '';
+  }
+}
+
+function updateAutoSettingsFields() {
+  const action = document.getElementById('settings-auto-action')?.value || 'disabled';
+  document.getElementById('settings-auto-accept-fields')?.classList.toggle('is-hidden', action !== 'accept');
+  document.getElementById('settings-auto-reject-fields')?.classList.toggle('is-hidden', action !== 'reject');
+}
+
+function renderLogoPreview(inputId, previewId) {
+  const value = document.getElementById(inputId)?.value.trim() || '';
+  const preview = document.getElementById(previewId);
+  if (!preview) return;
+  preview.innerHTML = '';
+
+  if (!value) {
+    preview.textContent = 'No logo';
+    return;
+  }
+
+  const img = document.createElement('img');
+  img.alt = 'Logo preview';
+  img.src = value;
+  img.onload = () => {
+    preview.innerHTML = '';
+    preview.appendChild(img);
+  };
+  img.onerror = () => {
+    preview.textContent = 'Image could not be loaded';
+  };
+  preview.textContent = 'Loading preview...';
+}
+
+function refreshSettingsLogoPreviews() {
+  renderLogoPreview('settings-main-logo', 'settings-main-logo-preview');
+  renderLogoPreview('settings-email-logo', 'settings-email-logo-preview');
+  renderLogoPreview('settings-print-logo', 'settings-print-logo-preview');
+}
+
+async function fetchJson(url, options = {}) {
+  const res = await fetch(url, options);
+  let data = {};
+  try { data = await res.json(); } catch (_) {}
+  if (!res.ok) throw new Error(data.error || data.message || `Request failed (${res.status})`);
+  return data;
+}
+
+async function ensureOrdersBackendRegistration(restaurant) {
+  if (!restaurant || restaurant.wp_linked || !restaurant.pin) return;
+  try {
+    const data = await fetchJson(`${BACKEND}/register-restaurant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurant_code: currentRestaurant, pin: String(restaurant.pin) })
+    });
+    if (data.success === false) throw new Error(data.message || 'Could not register Orders backend');
+  } catch (e) {
+    console.warn('Orders backend registration check failed:', e);
+  }
+}
+
+async function loadRestaurantSettings(force = false) {
+  if (!currentRestaurant) return;
+
+  const sub = document.getElementById('settings-sub');
+  const chip = document.getElementById('settings-source-chip');
+  const note = document.getElementById('settings-note');
+
+  if (sub) sub.textContent = 'Loading restaurant settings...';
+  if (chip) chip.textContent = 'Loading...';
+  if (note) note.style.display = 'none';
+  setSettingsFieldsDisabled(true);
+
+  try {
+    const settingsData = await fetchJson(`${BACKEND}/posup/restaurants/${encodeURIComponent(currentRestaurant)}/settings`);
+    if (!settingsData.success || !settingsData.restaurant) throw new Error(settingsData.error || 'Restaurant settings not found');
+
+    const restaurant = settingsData.restaurant;
+    loadedRestaurantSettings = restaurant;
+    currentRestaurantWpLinked = !!restaurant.wp_linked;
+
+    if (!currentRestaurantWpLinked) await ensureOrdersBackendRegistration(restaurant);
+
+    const [profileResult, autoResult, deviceResult] = await Promise.allSettled([
+      fetchJson(`${BACKEND}/restaurant-profile/${encodeURIComponent(currentRestaurant)}`),
+      fetchJson(`${BACKEND}/auto-settings/${encodeURIComponent(currentRestaurant)}`),
+      fetchJson(`${BACKEND}/printer-device/${encodeURIComponent(currentRestaurant)}`)
+    ]);
+
+    const profileData = profileResult.status === 'fulfilled' ? profileResult.value : {};
+    const autoData = autoResult.status === 'fulfilled' ? autoResult.value : {};
+    const deviceData = deviceResult.status === 'fulfilled' ? deviceResult.value : {};
+    const profile = profileData?.success ? (profileData.profile || {}) : {};
+    const auto = autoData?.success ? (autoData.settings || {}) : {};
+
+    document.getElementById('settings-code').value = restaurant.code || currentRestaurant;
+    document.getElementById('settings-name').value = profile.name || restaurant.name || '';
+    document.getElementById('settings-address').value = profile.address || '';
+    document.getElementById('settings-phone').value = profile.phone || '';
+    document.getElementById('settings-website').value = profile.website || restaurant.wp_site_url || '';
+
+    document.getElementById('settings-main-logo').value = restaurant.logo_url || profile.main_logo_url || '';
+    document.getElementById('settings-email-logo').value = profile.email_logo_url || '';
+    document.getElementById('settings-print-logo').value = profile.print_logo_url || '';
+
+    document.getElementById('settings-printer-device-id').value = deviceData?.success ? (deviceData.device_id || '') : '';
+    document.getElementById('settings-auto-action').value = auto.auto_action || 'disabled';
+    document.getElementById('settings-auto-wait').value = Number(auto.wait_minutes || 5);
+    document.getElementById('settings-auto-accept-time').value = auto.accept_time || '30 Minutes';
+    document.getElementById('settings-auto-reject-reason').value = auto.reject_reason || 'Zu beschäftigt';
+
+    document.getElementById('printer-model').value = restaurant.printer_model || '';
+    document.getElementById('printer-ip').value = restaurant.printer_ip || '';
+    document.getElementById('printer-port').value = restaurant.printer_port || '';
+
+    refreshSettingsLogoPreviews();
+    updateAutoSettingsFields();
+
+    if (currentRestaurantWpLinked) {
+      if (sub) sub.textContent = 'This restaurant is connected to WordPress. Settings are shown here for reference.';
+      if (chip) chip.textContent = 'Managed in WordPress';
+      if (note) {
+        note.className = 'settings-note warning';
+        note.textContent = 'This restaurant is WordPress-linked, so shared settings remain managed by the FoodUp WordPress plugins. POSUP will not overwrite them here.';
+        note.style.display = 'block';
+      }
+      setSettingsFieldsDisabled(true);
+    } else {
+      if (sub) sub.textContent = 'Manage restaurant, branding, Orders App and printer settings directly in POSUP.';
+      if (chip) chip.textContent = 'Managed in POSUP';
+      if (note) {
+        note.className = 'settings-note';
+        note.innerHTML = '<strong>Non-WordPress restaurant:</strong> POSUP is the settings source. Main, email and receipt logos can be configured here, together with Orders App fallback and printer settings.';
+        note.style.display = 'block';
+      }
+      setSettingsFieldsDisabled(false);
+    }
+
+    updatePrinterNetworkFields();
+  } catch (e) {
+    console.error(e);
+    if (sub) sub.textContent = 'Could not load restaurant settings.';
+    if (chip) chip.textContent = 'Error';
+    if (note) {
+      note.className = 'settings-note warning';
+      note.textContent = e.message || 'Could not load restaurant settings';
+      note.style.display = 'block';
+    }
+    setSettingsFieldsDisabled(true);
+  }
+}
+
+async function saveRestaurantSettings() {
+  if (!currentRestaurant) return;
+  if (currentRestaurantWpLinked) {
+    showToast('WordPress-linked settings must be changed in WordPress', 'error');
+    return;
+  }
+
+  const ownerPin = String(loadedRestaurantSettings?.pin || '');
+  if (!ownerPin) {
+    showToast('Restaurant owner PIN is missing. Use Reset PIN first.', 'error');
+    return;
+  }
+
+  const name = document.getElementById('settings-name').value.trim();
+  if (!name) {
+    showToast('Restaurant name is required', 'error');
+    return;
+  }
+
+  const address = document.getElementById('settings-address').value.trim();
+  const phone = document.getElementById('settings-phone').value.trim();
+  let website = document.getElementById('settings-website').value.trim();
+  website = website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+
+  const mainLogo = document.getElementById('settings-main-logo').value.trim();
+  const emailLogo = document.getElementById('settings-email-logo').value.trim();
+  const printLogo = document.getElementById('settings-print-logo').value.trim();
+  const printerDeviceId = document.getElementById('settings-printer-device-id').value.trim();
+
+  const autoAction = document.getElementById('settings-auto-action').value;
+  const autoWait = Math.max(1, Math.min(60, Number(document.getElementById('settings-auto-wait').value || 5)));
+  const autoAcceptTime = document.getElementById('settings-auto-accept-time').value.trim() || '30 Minutes';
+  const autoRejectReason = document.getElementById('settings-auto-reject-reason').value.trim() || 'Zu beschäftigt';
+
+  const model = document.getElementById('printer-model').value;
+  let printerIp = document.getElementById('printer-ip').value.trim();
+  let printerPort = document.getElementById('printer-port').value.trim();
+
+  if (model === 'sunmi') {
+    printerIp = '';
+    printerPort = '';
+  } else if (model && (!printerIp || !printerPort)) {
+    showToast('Printer IP and port are required for network printers', 'error');
+    return;
+  }
+
+  const saveBtn = document.getElementById('settings-save-btn');
+  const oldText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    await ensureOrdersBackendRegistration(loadedRestaurantSettings);
+
+    const requests = [
+      fetchJson(`${BACKEND}/posup/restaurants/${encodeURIComponent(currentRestaurant)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          logo_url: mainLogo,
+          printer_model: model,
+          printer_ip: printerIp,
+          printer_port: printerPort
+        })
+      }),
+      fetchJson(`${BACKEND}/restaurant-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_code: currentRestaurant,
+          owner_pin: ownerPin,
+          name,
+          phone,
+          address,
+          website,
+          print_logo_url: printLogo || mainLogo,
+          email_logo_url: emailLogo || mainLogo
+        })
+      }),
+      fetchJson(`${BACKEND}/auto-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_code: currentRestaurant,
+          owner_pin: ownerPin,
+          auto_action: autoAction,
+          wait_minutes: autoWait,
+          accept_time: autoAcceptTime,
+          reject_reason: autoRejectReason
+        })
+      }),
+      fetchJson(`${BACKEND}/set-printer-device`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_code: currentRestaurant,
+          owner_pin: ownerPin,
+          device_id: printerDeviceId
+        })
+      })
+    ];
+
+    const results = await Promise.all(requests);
+    const failed = results.find(r => r && r.success === false);
+    if (failed) throw new Error(failed.error || failed.message || 'One or more settings could not be saved');
+
+    showToast('Settings saved', 'success');
+    await loadRestaurantSettings(true);
+    loadOverview();
+    loadRestaurants();
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'Could not save settings', 'error');
+  } finally {
+    saveBtn.textContent = oldText;
+    if (!currentRestaurantWpLinked) saveBtn.disabled = false;
+  }
+}
+
+// Compatibility wrappers for any older internal references.
+function loadPrinterSettings() { return loadRestaurantSettings(); }
+function savePrinterSettings() { return saveRestaurantSettings(); }
+
 // ── ADDONS ──
 async function loadAddons(forceRefresh = false) {
   if (!currentRestaurant) return;
@@ -4008,11 +4584,15 @@ function buildAddonAssignmentLists(group = null) {
       `).join('')
     : '<div class="empty-state" style="padding:18px;">No categories</div>';
 
-  productContainer.innerHTML = allProducts.length
-    ? allProducts.map(product => `
+  const assignableProducts = allProducts.filter(product =>
+    String(product?.name || '').trim().length > 0
+  );
+
+  productContainer.innerHTML = assignableProducts.length
+    ? assignableProducts.map(product => `
         <label class="addon-check-row">
           <input type="checkbox" data-addon-assignment="product" value="${escapeAttr(product.id)}" ${selectedProducts.has(String(product.id)) ? 'checked' : ''}>
-          <span>${escapeHtml(product.name)}</span>
+          <span>${escapeHtml(String(product.name).trim())}</span>
         </label>
       `).join('')
     : '<div class="empty-state" style="padding:18px;">No products</div>';
@@ -4211,6 +4791,7 @@ async function reimportAddons() {
   }
 }
 
+
 // ── ONBOARDING MODE TOGGLE ──
 function setOnboardMode(mode) {
   const wpForm = document.getElementById('onboard-wp');
@@ -4246,7 +4827,7 @@ function setOnboardMode(mode) {
 }
 
 async function triggerCreateRestaurant() {
-  const code = document.getElementById('create-code').value.trim();
+  const code = document.getElementById('create-code').value.trim().toLowerCase();
   const name = document.getElementById('create-name').value.trim();
   const pin = document.getElementById('create-pin').value.trim();
   const adminPin = document.getElementById('create-admin-pin').value.trim();
@@ -4262,8 +4843,8 @@ async function triggerCreateRestaurant() {
 
   const resultEl = document.getElementById('import-result');
   const errorEl = document.getElementById('import-error');
-  resultEl.style.display = 'none';
-  errorEl.style.display = 'none';
+  if (resultEl) resultEl.style.display = 'none';
+  if (errorEl) errorEl.style.display = 'none';
 
   try {
     const res = await fetch(`${BACKEND}/posup/restaurants`, {
@@ -4278,13 +4859,32 @@ async function triggerCreateRestaurant() {
     });
 
     const data = await res.json();
-
     if (!res.ok || !data.success) {
       throw new Error(data.error || `Failed to create restaurant (${res.status})`);
     }
 
-    resultEl.style.display = 'block';
-    resultEl.textContent = `✓ "${name}" created with code "${code}". Add categories, products and addons manually from their tabs.`;
+    // Make a non-WordPress POSUP restaurant usable by the FoodUp Orders backend too.
+    // Existing registrations are left untouched by /register-restaurant.
+    const ownerPin = String(data.restaurant?.pin || pin || '1234');
+    try {
+      await fetch(`${BACKEND}/register-restaurant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_code: code, pin: ownerPin })
+      });
+      await fetch(`${BACKEND}/restaurant-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_code: code, owner_pin: ownerPin, name })
+      });
+    } catch (syncError) {
+      console.warn('Orders backend registration will be retried from Settings:', syncError);
+    }
+
+    if (resultEl) {
+      resultEl.style.display = 'block';
+      resultEl.textContent = `✓ "${name}" created with code "${code}". Add categories, products and addons manually from their tabs.`;
+    }
 
     document.getElementById('create-code').value = '';
     document.getElementById('create-name').value = '';
@@ -4296,11 +4896,13 @@ async function triggerCreateRestaurant() {
     const sel = document.getElementById('restaurant-select');
     if (sel) {
       sel.value = code;
-      await onRestaurantChange();
+      onRestaurantChange();
     }
   } catch (e) {
-    errorEl.style.display = 'block';
-    errorEl.textContent = '✗ ' + (e.message || 'Failed to create restaurant');
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = '✗ ' + (e.message || 'Failed to create restaurant');
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = 'Create Restaurant';
