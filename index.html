@@ -2610,6 +2610,31 @@
         </div>
       </div>
 
+      <div class="card" id="payment-terminal-settings-card">
+        <div class="card-title">Card Payment Terminal</div>
+        <div class="settings-section-sub">Choose how card payments are handled for this restaurant. This setting is POSUP-specific and can be changed even when the restaurant menu is linked to WordPress.</div>
+        <div class="settings-grid">
+          <div class="full">
+            <div class="field-label">Payment Terminal Mode</div>
+            <select id="settings-payment-terminal-mode" onchange="updatePaymentTerminalFields()">
+              <option value="manual">Manual terminal — enter amount manually</option>
+              <option value="goodcom">Goodcom P3000 — integrated payment</option>
+              <option value="cash_only">Cash only — hide card payment</option>
+            </select>
+            <div class="settings-help">Manual mode keeps the current workflow. Goodcom mode sends the POSUP total to the P3000 and waits for approval before creating the order.</div>
+          </div>
+          <div class="full" id="settings-goodcom-terminal-wrap" style="display:none;">
+            <div class="field-label">Goodcom Terminal Device ID <span style="font-weight:600;text-transform:none;letter-spacing:0;">(optional until device arrives)</span></div>
+            <input type="text" id="settings-goodcom-terminal-id" placeholder="Enter the P3000 device/terminal ID after setup">
+            <div class="settings-help">This lets POSUP bind a specific Goodcom device to this restaurant. Leave it blank until the P3000 arrives.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+          <button class="btn btn-primary" type="button" id="payment-settings-save-btn" onclick="savePaymentTerminalSettings()">Save Payment Settings</button>
+        </div>
+        <div class="settings-note" id="payment-settings-note" style="margin-top:14px;display:none;"></div>
+      </div>
+
       <div class="card">
         <div class="card-title">Receipt Printer</div>
         <div class="settings-section-sub">Configure the printer used by POSUP for this restaurant.</div>
@@ -4371,6 +4396,78 @@ function updateAutoSettingsFields() {
   document.getElementById('settings-auto-reject-fields')?.classList.toggle('is-hidden', action !== 'reject');
 }
 
+function setPaymentSettingsDisabled(disabled) {
+  ['settings-payment-terminal-mode', 'settings-goodcom-terminal-id', 'payment-settings-save-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
+
+function updatePaymentTerminalFields() {
+  const mode = document.getElementById('settings-payment-terminal-mode')?.value || 'manual';
+  const wrap = document.getElementById('settings-goodcom-terminal-wrap');
+  if (wrap) wrap.style.display = mode === 'goodcom' ? '' : 'none';
+}
+
+async function savePaymentTerminalSettings() {
+  if (!currentRestaurant) return;
+
+  const modeEl = document.getElementById('settings-payment-terminal-mode');
+  const terminalIdEl = document.getElementById('settings-goodcom-terminal-id');
+  const note = document.getElementById('payment-settings-note');
+  const btn = document.getElementById('payment-settings-save-btn');
+  const mode = modeEl?.value || 'manual';
+  const terminalId = terminalIdEl?.value.trim() || '';
+
+  if (!['manual', 'goodcom', 'cash_only'].includes(mode)) {
+    showToast('Invalid payment terminal mode', 'error');
+    return;
+  }
+
+  const oldText = btn?.textContent || 'Save Payment Settings';
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (note) note.style.display = 'none';
+
+  try {
+    const result = await fetchJson(`${BACKEND}/posup/restaurants/${encodeURIComponent(currentRestaurant)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_terminal_mode: mode,
+        goodcom_terminal_id: mode === 'goodcom' ? terminalId : ''
+      })
+    });
+
+    if (!result?.success) throw new Error(result?.error || 'Payment settings could not be saved');
+
+    if (loadedRestaurantSettings) {
+      loadedRestaurantSettings.payment_terminal_mode = mode;
+      loadedRestaurantSettings.goodcom_terminal_id = mode === 'goodcom' ? terminalId : '';
+      loadedRestaurantSettings.payment_schema_ready = true;
+    }
+
+    if (note) {
+      note.className = 'settings-note';
+      note.textContent = mode === 'goodcom'
+        ? 'Goodcom integrated payments are enabled for this restaurant. The Android P3000 native payment module will be connected when the device arrives.'
+        : mode === 'cash_only'
+          ? 'Card payment is disabled for this restaurant. POSUP will show cash only.'
+          : 'Manual card-terminal mode is enabled. Staff will enter the POSUP amount on the external terminal manually.';
+      note.style.display = 'block';
+    }
+    showToast('Payment terminal settings saved', 'success');
+  } catch (e) {
+    if (note) {
+      note.className = 'settings-note warning';
+      note.textContent = e.message || 'Payment settings could not be saved';
+      note.style.display = 'block';
+    }
+    showToast(e.message || 'Payment settings could not be saved', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldText; }
+  }
+}
+
 function renderLogoPreview(inputId, previewId) {
   const value = document.getElementById(inputId)?.value.trim() || '';
   const preview = document.getElementById(previewId);
@@ -4687,6 +4784,7 @@ async function loadRestaurantSettings(force = false) {
   if (chip) chip.textContent = 'Loading...';
   if (note) note.style.display = 'none';
   setSettingsFieldsDisabled(true);
+  setPaymentSettingsDisabled(true);
 
   try {
     const settingsData = await fetchJson(`${BACKEND}/posup/restaurants/${encodeURIComponent(currentRestaurant)}/settings`);
@@ -4730,6 +4828,19 @@ async function loadRestaurantSettings(force = false) {
     document.getElementById('printer-ip').value = restaurant.printer_ip || '';
     document.getElementById('printer-port').value = restaurant.printer_port || '';
 
+    document.getElementById('settings-payment-terminal-mode').value = restaurant.payment_terminal_mode || 'manual';
+    document.getElementById('settings-goodcom-terminal-id').value = restaurant.goodcom_terminal_id || '';
+    updatePaymentTerminalFields();
+    setPaymentSettingsDisabled(false);
+    const paymentNote = document.getElementById('payment-settings-note');
+    if (paymentNote) {
+      paymentNote.className = restaurant.payment_schema_ready === false ? 'settings-note warning' : 'settings-note';
+      paymentNote.textContent = restaurant.payment_schema_ready === false
+        ? 'Payment terminal database migration has not been installed yet. Run the included Supabase SQL migration before saving this setting.'
+        : 'This payment setting belongs to POSUP and is independent from WordPress.';
+      paymentNote.style.display = 'block';
+    }
+
     refreshSettingsLogoPreviews();
     const logoUploadStatus = document.getElementById('settings-main-logo-upload-status');
     if (logoUploadStatus) logoUploadStatus.textContent = 'PNG, JPG, WEBP or SVG';
@@ -4766,6 +4877,7 @@ async function loadRestaurantSettings(force = false) {
       note.style.display = 'block';
     }
     setSettingsFieldsDisabled(true);
+    setPaymentSettingsDisabled(true);
   }
 }
 
