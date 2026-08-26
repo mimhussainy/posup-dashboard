@@ -1669,6 +1669,61 @@
     color: var(--text);
   }
 
+  .excel-import-mode {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.72);
+  }
+
+  .excel-mode-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .excel-mode-option {
+    flex: 1 1 240px;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .excel-mode-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    accent-color: var(--accent);
+    flex: 0 0 auto;
+  }
+
+  .excel-mode-copy {
+    display: block;
+    min-width: 0;
+  }
+
+  .excel-mode-copy strong {
+    display: block;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .excel-mode-copy small {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
   .settings-conditional {
     margin-top: 14px;
   }
@@ -2654,6 +2709,25 @@
           <div class="form-row" style="margin-top:14px;">
             <div class="field-label">Excel File</div>
             <input type="file" id="excel-import-file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+          </div>
+          <div class="excel-import-mode">
+            <div class="field-label">Import Mode</div>
+            <div class="excel-mode-options">
+              <label class="excel-mode-option">
+                <input type="radio" name="excel-import-mode" value="update" checked>
+                <span class="excel-mode-copy">
+                  <strong>Update existing menu</strong>
+                  <small>Update matching products and add new ones. Products not in the Excel sheet stay unchanged.</small>
+                </span>
+              </label>
+              <label class="excel-mode-option">
+                <input type="radio" name="excel-import-mode" value="overwrite">
+                <span class="excel-mode-copy">
+                  <strong>Overwrite existing menu</strong>
+                  <small>The Excel sheet becomes the active menu. Existing products/categories missing from the sheet are deactivated.</small>
+                </span>
+              </label>
+            </div>
           </div>
           <div class="excel-actions">
             <button type="button" class="btn btn-secondary" onclick="downloadExcelTemplate()">⬇ Download Excel Template</button>
@@ -4375,6 +4449,9 @@ async function importExcelMenu() {
   const resultEl = document.getElementById('excel-import-result');
   const errorEl = document.getElementById('excel-import-error');
   const btn = document.getElementById('excel-import-btn');
+  const mode = document.querySelector('input[name="excel-import-mode"]:checked')?.value === 'overwrite'
+    ? 'overwrite'
+    : 'update';
 
   resultEl.textContent = '';
   errorEl.textContent = '';
@@ -4390,6 +4467,13 @@ async function importExcelMenu() {
   if (typeof XLSX === 'undefined') {
     errorEl.textContent = 'Excel reader could not be loaded. Refresh the dashboard and try again.';
     return;
+  }
+
+  if (mode === 'overwrite') {
+    const confirmed = window.confirm(
+      'Overwrite existing menu? Products and categories that are not in this Excel sheet will be deactivated. This does not permanently delete them.'
+    );
+    if (!confirmed) return;
   }
 
   btn.disabled = true;
@@ -4437,7 +4521,11 @@ async function importExcelMenu() {
       const data = await fetchJson(`${BACKEND}/posup/import-excel/${encodeURIComponent(currentRestaurant)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: chunk })
+        body: JSON.stringify({
+          rows: chunk,
+          mode,
+          overwrite_start: mode === 'overwrite' && i === 0
+        })
       });
 
       totals.created += Number(data.created || 0);
@@ -4447,8 +4535,9 @@ async function importExcelMenu() {
       if (Array.isArray(data.errors)) allErrors.push(...data.errors);
     }
 
+    const modeLabel = mode === 'overwrite' ? 'overwrite' : 'update';
     resultEl.textContent =
-      `✓ Excel import complete: ${totals.created} created, ${totals.updated} updated, ` +
+      `✓ Excel ${modeLabel} complete: ${totals.created} created, ${totals.updated} updated, ` +
       `${totals.categories_created} categories created${totals.failed ? `, ${totals.failed} failed` : ''}.`;
 
     if (allErrors.length) {
