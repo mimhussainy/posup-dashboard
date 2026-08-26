@@ -1095,6 +1095,29 @@
     font-weight: 900;
   }
 
+  .category-remove-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    background: #fff;
+    color: var(--red);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.16s ease, border-color 0.16s ease;
+  }
+
+  .category-remove-btn:hover {
+    background: var(--red-soft);
+    border-color: rgba(220, 38, 38, 0.38);
+  }
+
   .side-tags {
     margin-top: 5px;
     color: var(--muted);
@@ -3114,7 +3137,7 @@ async function loadOverview() {
   if (snapshotEl) snapshotEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
   try {
-    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}`);
+    const res = await fetch(`${BACKEND}/posup/products/${currentRestaurant}?include_inactive=1`);
     const data = await res.json();
 
     if (!data.restaurant) {
@@ -3322,14 +3345,16 @@ function renderCategoryFilter() {
       if (hasVariables) tags.push('⚡ Variable');
       if (alcoholCount > 0) tags.push(`🍺 Alcohol ${alcoholCount}/${count}`);
       addonNames.slice(0, 2).forEach(n => tags.push('+ ' + n));
+      const categoryActive = c.active !== false;
       return {
         id: c.id,
         name: c.name,
         count,
         activeCount,
         alcoholCount,
-        allActive: count > 0 && activeCount === count,
-        mixed: activeCount > 0 && activeCount < count,
+        categoryActive,
+        allActive: categoryActive && (count === 0 || activeCount === count),
+        mixed: categoryActive && activeCount > 0 && activeCount < count,
         allAlcohol: count > 0 && alcoholCount === count,
         mixedAlcohol: alcoholCount > 0 && alcoholCount < count,
         tags,
@@ -3354,9 +3379,13 @@ function renderCategoryFilter() {
 
     const toggleHtml = item.isAll ? '' : `
       <label class="toggle category-toggle${item.mixed ? ' is-mixed' : ''}" title="Enable or disable this entire category" onclick="event.stopPropagation()">
-        <input type="checkbox" ${item.allActive ? 'checked' : ''} ${item.count === 0 ? 'disabled' : ''} onchange="toggleCategory('${escapeAttr(item.id)}', this.checked, this)">
+        <input type="checkbox" ${item.allActive ? 'checked' : ''} onchange="toggleCategory('${escapeAttr(item.id)}', this.checked, this)">
         <span class="toggle-slider"></span>
       </label>
+    `;
+
+    const removeHtml = item.isAll ? '' : `
+      <button type="button" class="category-remove-btn" title="Remove category" aria-label="Remove ${escapeAttr(item.name)}" onclick="event.stopPropagation(); removeCategory('${escapeAttr(item.id)}')">✕</button>
     `;
 
     const alcoholToggleHtml = item.isAll ? '' : `
@@ -3381,6 +3410,7 @@ function renderCategoryFilter() {
           <span class="side-count">${item.count}</span>
           ${alcoholToggleHtml}
           ${toggleHtml}
+          ${removeHtml}
         </div>
       </div>
     `;
@@ -3405,11 +3435,9 @@ function setCategoryFilter(id) {
 
 async function toggleCategory(categoryId, active, inputEl) {
   const productsInCategory = allProducts.filter(p => productInCategory(p, categoryId));
-  if (productsInCategory.length === 0) return;
-
-  const previousState = inputEl ? !active : null;
   const category = allCategories.find(c => String(c.id) === String(categoryId));
   const categoryName = category ? category.name : 'category';
+  const previousState = category ? category.active !== false : !active;
 
   if (inputEl) {
     inputEl.disabled = true;
@@ -3418,34 +3446,81 @@ async function toggleCategory(categoryId, active, inputEl) {
   }
 
   try {
+    // Update the category itself so the POS app no longer receives its title when disabled.
+    const categoryRes = await fetch(`${BACKEND}/posup/category/${categoryId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active })
+    });
+    const categoryResult = await categoryRes.json();
+    if (!categoryRes.ok || !categoryResult.success) {
+      throw new Error(categoryResult.error || 'Category update failed');
+    }
+
+    // Keep the current behavior: enabling/disabling a category also changes every product in it.
     const updates = productsInCategory.map(product =>
       fetch(`${BACKEND}/posup/product/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active })
-      }).then(res => res.json())
+      }).then(async res => ({ ok: res.ok, data: await res.json() }))
     );
 
     const results = await Promise.all(updates);
-    const failed = results.filter(result => !result || !result.success).length;
+    const failed = results.filter(result => !result.ok || !result.data || !result.data.success).length;
+    if (failed > 0) throw new Error(`${failed} products failed to update`);
 
-    if (failed > 0) {
-      throw new Error(`${failed} products failed to update`);
-    }
-
+    if (category) category.active = active;
     productsInCategory.forEach(product => { product.active = active; });
+
     const statActive = document.getElementById('stat-active');
     if (statActive) statActive.textContent = allProducts.filter(p => p.active).length;
 
     renderCategoryFilter();
     filterProducts();
     showToast(active ? `✓ ${categoryName} enabled` : `✓ ${categoryName} disabled`, 'success');
-      } catch(e) {
+  } catch(e) {
+    // Reload authoritative data if anything failed so dashboard state does not drift.
+    if (category) category.active = previousState;
     if (inputEl) {
       inputEl.checked = previousState;
       inputEl.disabled = false;
     }
+    await loadProducts();
     showToast('Failed to update category', 'error');
+  }
+}
+
+async function removeCategory(categoryId) {
+  const category = allCategories.find(c => String(c.id) === String(categoryId));
+  if (!category) return;
+
+  const productsInCategory = allProducts.filter(p => productInCategory(p, categoryId));
+  const suffix = productsInCategory.length
+    ? `\n\n${productsInCategory.length} product${productsInCategory.length === 1 ? '' : 's'} will be kept, but removed from this category.`
+    : '';
+
+  if (!confirm(`Remove category "${category.name}"?${suffix}`)) return;
+
+  try {
+    const res = await fetch(`${BACKEND}/posup/category/${categoryId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Delete failed');
+
+    allCategories = allCategories.filter(c => String(c.id) !== String(categoryId));
+    allProducts.forEach(p => {
+      p.category_ids = (p.category_ids || []).filter(id => String(id) !== String(categoryId));
+    });
+    allAddons.forEach(a => {
+      a.assigned_category_ids = (a.assigned_category_ids || []).filter(id => String(id) !== String(categoryId));
+    });
+
+    if (String(selectedCategoryId) === String(categoryId)) selectedCategoryId = 'all';
+    renderCategoryFilter();
+    filterProducts();
+    showToast(`✓ ${category.name} removed`, 'success');
+  } catch (e) {
+    showToast(`Failed to remove category: ${e.message || 'Unknown error'}`, 'error');
   }
 }
 
