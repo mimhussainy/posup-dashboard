@@ -2331,6 +2331,7 @@
       <div class="topbar-logo">POSUP</div>
       <div class="nav-tabs">
         <button class="nav-tab active" data-page="overview" onclick="showPage('overview', this)">Overview</button>
+        <button class="nav-tab" data-page="sales" onclick="showPage('sales', this)">Sales</button>
         <button class="nav-tab" data-page="products" onclick="showPage('products', this)">Products</button>
         <button class="nav-tab" data-page="addons" onclick="showPage('addons', this)">Addons</button>
         <button class="nav-tab" data-page="settings" onclick="showPage('settings', this)">Settings</button>
@@ -2420,6 +2421,54 @@
             <span class="quick-action-sub">Reload the latest saved menu data.</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SALES PAGE -->
+  <div class="page" id="page-sales">
+    <div class="page-header">
+      <div>
+        <div class="page-kicker">POS Sales</div>
+        <div class="page-title">Sales</div>
+        <div class="page-sub">Review saved POSUP sales and permanently remove test sales from the selected restaurant.</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+        <div>
+          <div id="sales-summary" style="font-weight:800;color:var(--text);">Loading sales...</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;">Deleting a sale removes it from POSUP statistics and order history.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-secondary" onclick="loadSales()">↻ Refresh</button>
+          <button class="btn" id="sales-delete-selected-btn" onclick="deleteSelectedSales()" disabled
+            style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">
+            Delete selected
+          </button>
+        </div>
+      </div>
+
+      <div id="sales-loading" style="display:none;padding:28px;text-align:center;color:var(--muted);">Loading sales...</div>
+
+      <div style="overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="width:44px;"><input id="sales-select-all" type="checkbox" onchange="toggleAllSales(this)"></th>
+              <th>Receipt</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th>Payment</th>
+              <th style="text-align:right;">Total</th>
+              <th style="width:100px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="sales-table-body">
+            <tr><td colspan="7" style="padding:28px;text-align:center;color:var(--muted);">Open the Sales tab to load orders.</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -3171,6 +3220,7 @@ function showPage(name, tabEl) {
   if (name === 'addons') loadAddons();
   if (name === 'settings') loadRestaurantSettings();
   if (name === 'import') { refreshExcelRestaurantLabel(); loadRestaurantsList(); }
+  if (name === 'sales') loadSales();
   if (name === 'overview') loadOverview();
 }
 
@@ -3222,6 +3272,171 @@ function onRestaurantChange() {
   else if (activePage === 'settings') loadRestaurantSettings();
   else if (activePage === 'import') loadRestaurantsList();
   else loadOverview();
+}
+
+// ── SALES MANAGER ──
+let posupSales = [];
+
+function formatSaleDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return escapeHtml(String(value));
+  return d.toLocaleString('de-CH', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function saleItemsText(items) {
+  if (!Array.isArray(items) || items.length === 0) return '—';
+  return items.map(item => {
+    const qty = Number(item?.quantity || 1);
+    const name = String(item?.name || 'Item');
+    return `${qty}× ${name}`;
+  }).join(', ');
+}
+
+function updateSalesSelection() {
+  const boxes = Array.from(document.querySelectorAll('.sale-select'));
+  const selected = boxes.filter(box => box.checked);
+  const btn = document.getElementById('sales-delete-selected-btn');
+  const master = document.getElementById('sales-select-all');
+
+  if (btn) {
+    btn.disabled = selected.length === 0;
+    btn.textContent = selected.length
+      ? `Delete selected (${selected.length})`
+      : 'Delete selected';
+  }
+
+  if (master) {
+    master.checked = boxes.length > 0 && selected.length === boxes.length;
+    master.indeterminate = selected.length > 0 && selected.length < boxes.length;
+  }
+}
+
+function toggleAllSales(master) {
+  document.querySelectorAll('.sale-select').forEach(box => {
+    box.checked = master.checked;
+  });
+  updateSalesSelection();
+}
+
+function renderSales() {
+  const body = document.getElementById('sales-table-body');
+  const summary = document.getElementById('sales-summary');
+  if (!body) return;
+
+  if (summary) {
+    summary.textContent = `${posupSales.length} saved sale${posupSales.length === 1 ? '' : 's'} — ${currentRestaurant || ''}`;
+  }
+
+  if (!posupSales.length) {
+    body.innerHTML = '<tr><td colspan="7" style="padding:34px;text-align:center;color:var(--muted);">No POSUP sales saved for this restaurant.</td></tr>';
+    updateSalesSelection();
+    return;
+  }
+
+  body.innerHTML = posupSales.map(order => {
+    const id = escapeAttr(String(order.id || ''));
+    const orderNumber = escapeHtml(String(order.order_number || '—'));
+    const items = escapeHtml(saleItemsText(order.items));
+    const payment = escapeHtml(String(order.payment_method || '—'));
+    const total = Number(order.total || 0);
+    const currency = escapeHtml(String(order.currency || 'CHF'));
+
+    return `
+      <tr>
+        <td><input class="sale-select" type="checkbox" value="${id}" onchange="updateSalesSelection()"></td>
+        <td style="font-weight:800;">${orderNumber}</td>
+        <td style="white-space:nowrap;">${formatSaleDate(order.created_at)}</td>
+        <td style="max-width:420px;white-space:normal;line-height:1.35;">${items}</td>
+        <td>${payment}</td>
+        <td style="text-align:right;font-weight:800;white-space:nowrap;">${currency} ${total.toFixed(2)}</td>
+        <td>
+          <button class="btn" onclick="deleteOneSale('${id}', '${escapeAttr(String(order.order_number || 'sale'))}')"
+            style="padding:7px 10px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">
+            Delete
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  updateSalesSelection();
+}
+
+async function loadSales() {
+  if (!currentRestaurant) return;
+
+  const loading = document.getElementById('sales-loading');
+  const body = document.getElementById('sales-table-body');
+  if (loading) loading.style.display = 'block';
+  if (body) body.innerHTML = '';
+
+  try {
+    const data = await fetchJson(
+      `${BACKEND}/posup/orders/${encodeURIComponent(currentRestaurant)}`
+    );
+
+    posupSales = Array.isArray(data.orders) ? data.orders : [];
+    renderSales();
+  } catch (e) {
+    console.error(e);
+    posupSales = [];
+    if (body) {
+      body.innerHTML = `<tr><td colspan="7" style="padding:28px;text-align:center;color:#be123c;">${escapeHtml(e.message || 'Could not load sales')}</td></tr>`;
+    }
+    const summary = document.getElementById('sales-summary');
+    if (summary) summary.textContent = 'Could not load sales';
+  } finally {
+    if (loading) loading.style.display = 'none';
+  }
+}
+
+async function deleteSalesByIds(ids, label) {
+  if (!currentRestaurant || !ids.length) return;
+
+  const ok = confirm(
+    `Permanently delete ${label} from ${currentRestaurant}?\n\nThis removes the sale from POSUP statistics and cannot be undone.`
+  );
+  if (!ok) return;
+
+  try {
+    const data = await fetchJson(
+      `${BACKEND}/posup/orders/${encodeURIComponent(currentRestaurant)}/delete-selected`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids,
+          confirm: 'DELETE_POSUP_SALES'
+        })
+      }
+    );
+
+    showToast(`${data.deleted_count || 0} sale(s) deleted`, 'success');
+    await loadSales();
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'Could not delete sale', 'error');
+  }
+}
+
+async function deleteOneSale(id, orderNumber) {
+  await deleteSalesByIds([id], orderNumber);
+}
+
+async function deleteSelectedSales() {
+  const ids = Array.from(document.querySelectorAll('.sale-select:checked'))
+    .map(box => box.value)
+    .filter(Boolean);
+
+  if (!ids.length) return;
+  await deleteSalesByIds(ids, `${ids.length} selected sale(s)`);
 }
 
 // ── OVERVIEW ──
