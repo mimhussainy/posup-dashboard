@@ -2644,6 +2644,8 @@
             <select id="printer-model" onchange="updatePrinterNetworkFields()">
               <option value="">Not configured</option>
               <option value="sunmi">SUNMI Built-in Printer</option>
+
+              <option value="epson_bluetooth">Epson TM-m30II - Bluetooth (iPad/iPhone)</option>
               <option value="wifi">WiFi Network Printer (ESC/POS)</option>
               <option value="generic">Generic ESC/POS</option>
               <option value="epson">Epson TM (USB via TCP server on Windows)</option>
@@ -4378,11 +4380,11 @@ function updatePrinterNetworkFields() {
   const portWrap = document.getElementById('printer-port-wrap');
   if (!modelEl || !ipWrap || !portWrap) return;
 
-  const isSunmi = modelEl.value === 'sunmi';
-  ipWrap.style.display = isSunmi ? 'none' : '';
-  portWrap.style.display = isSunmi ? 'none' : '';
+  const isLocalPrinter = modelEl.value === 'sunmi' || modelEl.value === 'epson_bluetooth';
+  ipWrap.style.display = isLocalPrinter ? 'none' : '';
+  portWrap.style.display = isLocalPrinter ? 'none' : '';
 
-  if (isSunmi && currentRestaurantWpLinked === false) {
+  if (isLocalPrinter && currentRestaurantWpLinked === false) {
     const ip = document.getElementById('printer-ip');
     const port = document.getElementById('printer-port');
     if (ip) ip.value = '';
@@ -4919,7 +4921,7 @@ async function saveRestaurantSettings() {
   let printerIp = document.getElementById('printer-ip').value.trim();
   let printerPort = document.getElementById('printer-port').value.trim();
 
-  if (model === 'sunmi') {
+  if (model === 'sunmi' || model === 'epson_bluetooth') {
     printerIp = '';
     printerPort = '';
   } else if (model && (!printerIp || !printerPort)) {
